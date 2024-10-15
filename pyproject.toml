@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "cfa-config-generator"
+version = "0.1.0"
+description = "Config generation tool for modeling pipelines."
+authors = ["amondal2 <ab59@cdc.gov>"]
+license = "ASL"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
