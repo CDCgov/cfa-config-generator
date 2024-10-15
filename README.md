@@ -2,7 +2,7 @@
 
 ## Overview
 
-Scripts and utils to generate configuration objects for modeling pipelines. The first version of this will support `epinow2`, but will be extensible to other
+Scripts and utils to generate configuration objects for modeling pipelines. The first version of this will support [{EpiNow2}](https://github.com/epiforecasts/EpiNow2), but will be extensible to other
 projects down the line.
 
 ## Project Admin
