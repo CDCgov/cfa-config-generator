@@ -19,7 +19,7 @@ def generate_task_configs(
 ):
     """
     Generates a list of configuration objects based on
-    supplied.
+    supplied parameters.
     Parameters:
         state: geography to run model
         report_date: date of model run
