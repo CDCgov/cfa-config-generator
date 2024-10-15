@@ -1,19 +1,66 @@
 shared_params = {
     "seed": 42,
     "horizon": 14,
-    "priors": {
-        "rt": {
-            "mean": 1.0,
-            "sd": 0.2
-        },
-        "gp": {
-            "alpha_sd": 0.01
-        }
-    },
-    "sampler_opts": {
-        "cores": 4,
-        "chains": 4,
-        "adapt_delta": 0.99,
-        "max_treedepth": 12
-    }
+    "priors": {"rt": {"mean": 1.0, "sd": 0.2}, "gp": {"alpha_sd": 0.01}},
+    "sampler_opts": {"cores": 4, "chains": 4, "adapt_delta": 0.99, "max_treedepth": 12},
 }
+
+states = [
+    "ak",
+    "al",
+    "ar",
+    "as",
+    "az",
+    "ca",
+    "co",
+    "ct",
+    "dc",
+    "de",
+    "fl",
+    "ga",
+    "hi",
+    "ia",
+    "id",
+    "il",
+    "in",
+    "ks",
+    "ky",
+    "la",
+    "ma",
+    "md",
+    "me",
+    "mi",
+    "mn",
+    "mo",
+    "ms",
+    "mt",
+    "nc",
+    "nd",
+    "ne",
+    "nh",
+    "nj",
+    "nm",
+    "nv",
+    "ny",
+    "oh",
+    "ok",
+    "or",
+    "pa",
+    "ri",
+    "sc",
+    "sd",
+    "tn",
+    "tx",
+    "ut",
+    "va",
+    "vt",
+    "wa",
+    "wi",
+    "wv",
+    "wy",
+    "us",
+]
+
+nssp_states_omit = ["as", "fm", "mh", "mp", "pr", "pw", "vi", "mo", "gu"]
+pathogens = ["covid", "flu"]
+data_sources = ["nhsn", "nssp"]

@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-from utils.epinow2.functions import generate_job_id
+from utils.epinow2.functions import generate_job_id, generate_task_configs
 
 if __name__ == "__main__":
     """
@@ -16,12 +16,18 @@ if __name__ == "__main__":
     # Pull run parameters from environment
     state = os.environ.get("state", "all")
     pathogen = os.environ.get("pathogen", "all")
-    report_date = os.environ.get(
-        "report_date", datetime.today().strftime("%Y-%m-%d")
-    )
+    report_date = os.environ.get("report_date", datetime.today().strftime("%Y-%m-%d"))
     reference_date = os.environ.get("reference_date", [report_date])
+    data_source = os.environ.get("data_source", "nssp")
 
     # Generate job-specific parameters
     as_of_date = int(datetime.timestamp(datetime.now()))
     job_id = generate_job_id()
-    print(job_id)
+    task_configs = generate_task_configs(
+        state=state,
+        report_date=report_date,
+        reference_date=reference_date,
+        as_of_date=as_of_date,
+        job_id=job_id,
+        data_source=data_source,
+    )
