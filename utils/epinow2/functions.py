@@ -1,6 +1,6 @@
 from uuid import uuid1
 from datetime import datetime, timedelta
-from utils.epinow2.constants import states, pathogens, nssp_states_omit
+from utils.epinow2.constants import states, pathogens, nssp_states_omit, shared_params
 
 
 def generate_job_id():
@@ -22,6 +22,8 @@ def validate_args(
         report_date: date of model run
         reference_date: array of reference (event) dates
         data_source: source of input data
+    Returns:
+        A dictionary of sanitized arguments.
     """
     args_dict = {}
     if state == "all":
@@ -59,6 +61,17 @@ def validate_args(
     return args_dict
 
 
+def generate_task_id(job_id=None, state=None, pathogen=None):
+    """Generates a task_id which consists of the hex code of the job_id
+    and information on the state and pathogen.
+    Parameters:
+        job_id: UUID of job
+        state: state being run
+        pathogen: pathogen being run
+    """
+    return f"{job_id.hex}_{state}_{pathogen}"
+
+
 def generate_task_configs(
     state=None,
     pathogen=None,
@@ -82,4 +95,28 @@ def generate_task_configs(
     Returns:
         A list of configuration objects.
     """
-    return []
+    configs = []
+    # Create tasks for each state-pathogen combination
+    for s in state:
+        for p in pathogen:
+            task_config = {
+                "job_id": str(job_id),
+                "task_id": generate_task_id(job_id=job_id, state=s, pathogen=p),
+                "as_of_date": as_of_date,
+                "disease": p,
+                "geo_value": [s],
+                "geo_type": "state",
+                "parameters": shared_params["parameters"],
+                "data": {
+                    "path": "gold/",
+                    "blob_storage_container": None,
+                    "report_date": [report_date],
+                    "reference_date": ["2023-01-01", "2022-12-30", "2022-12-29"],
+                },
+                "seed": shared_params["seed"],
+                "horizon": shared_params["horizon"],
+                "priors": shared_params["priors"],
+                "sampler_opts": shared_params["sampler_opts"],
+            }
+            configs.append(task_config)
+    return configs
