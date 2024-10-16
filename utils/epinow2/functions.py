@@ -68,7 +68,7 @@ def validate_args(
         raise ValueError(
             "Invalid reference_date. Ensure all reference_dates are before the report date."
         )
-    args_dict["reference_date"] = reference_date
+    args_dict["reference_dates"] = reference_dates
     args_dict["report_date"] = report_date
     return args_dict
 
