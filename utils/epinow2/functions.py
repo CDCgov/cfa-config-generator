@@ -58,8 +58,8 @@ def validate_args(
         args_dict["pathogen"] = [pathogen]
 
     # Convert dates to datetime
-    reference_datetime = [
-        datetime.strptime(x, "%Y-%m-%d") for x in reference_date
+    reference_dates = [
+        date.fromisoformat(x) for x in reference_date
     ]
     report_datetime = datetime.strptime(report_date, "%Y-%m-%d")
 
