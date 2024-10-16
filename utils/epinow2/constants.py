@@ -71,5 +71,5 @@ states = [
 ]
 
 nssp_states_omit = ["as", "fm", "mh", "mp", "pr", "pw", "vi", "mo", "gu"]
-pathogens = ["covid", "flu"]
+pathogens = ["COVID-19", "Influenza"]
 data_sources = ["nhsn", "nssp"]
