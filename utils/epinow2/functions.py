@@ -18,7 +18,7 @@ def generate_job_id():
 
 
 def validate_args(
-    state=None,
+    state: str | None = None,
     pathogen=None,
     report_date=None,
     reference_date=None,
