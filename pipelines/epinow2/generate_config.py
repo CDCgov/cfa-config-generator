@@ -1,5 +1,5 @@
 import os
-from datetime import datetime
+from datetime import date, datetime
 
 from utils.epinow2.functions import (
     generate_job_id,
@@ -21,10 +21,8 @@ if __name__ == "__main__":
     # Pull run parameters from environment
     state = os.environ.get("state", "all")
     pathogen = os.environ.get("pathogen", "all")
-    report_date = os.environ.get(
-        "report_date", datetime.today().strftime("%Y-%m-%d")
-    )
-    reference_date = os.environ.get("reference_date", [report_date])
+    report_date = os.environ.get("report_date", date.today())
+    reference_dates = os.environ.get("reference_date", [report_date])
     data_source = os.environ.get("data_source", "nssp")
 
     # Validate and sanitize args
@@ -32,7 +30,7 @@ if __name__ == "__main__":
         state=state,
         pathogen=pathogen,
         report_date=report_date,
-        reference_date=reference_date,
+        reference_dates=reference_dates,
         data_source=data_source,
     )
 

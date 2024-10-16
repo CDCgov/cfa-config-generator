@@ -1,5 +1,5 @@
-from datetime import datetime, date
-from uuid import uuid1
+from datetime import date
+from uuid import UUID, uuid1
 
 from utils.epinow2.constants import (
     nssp_states_omit,
@@ -9,7 +9,7 @@ from utils.epinow2.constants import (
 )
 
 
-def generate_job_id():
+def generate_job_id() -> UUID:
     """Generates a UUID1 object to associate
     with job IDs. UUID1 can be sorted by
     timestamp by default, which is desirable
@@ -23,14 +23,14 @@ def validate_args(
     report_date: date | None = None,
     reference_dates: list[date] | None = None,
     data_source: str | None = None,
-):
+) -> dict:
     """Checks that user-supplied arguments are valid and returns them
     in a standardized format for downstream use.
     Parameters:
         state: geography to run model
         pathogen: pathogen to run
         report_date: date of model run
-        reference_date: array of reference (event) dates
+        reference_dates: array of reference (event) dates
         data_source: source of input data
     Returns:
         A dictionary of sanitized arguments.
@@ -39,10 +39,8 @@ def validate_args(
     if state == "all":
         if data_source == "nssp":
             args_dict["state"] = list(set(states) - set(nssp_states_omit))
-            args_dict["data_source"] = data_source
         elif data_source == "nhsn":
             args_dict["state"] = [states]
-            args_dict["data_source"] = data_source
         else:
             raise ValueError(f"Data source {data_source} not recognized.")
     elif state not in states:
@@ -57,14 +55,14 @@ def validate_args(
     else:
         args_dict["pathogen"] = [pathogen]
 
-    # Convert dates to datetime
+    # Standardize reference_dates
     reference_dates = [
-        date.fromisoformat(x) for x in reference_date
+        date.fromisoformat(x) if isinstance(x, str) else x
+        for x in reference_dates
     ]
-    report_datetime = datetime.strptime(report_date, "%Y-%m-%d")
 
     # Check valid reference_date
-    if not all(ref <= report_datetime for ref in reference_datetime):
+    if not all(ref <= report_date for ref in reference_dates):
         raise ValueError(
             "Invalid reference_date. Ensure all reference_dates are before the report date."
         )
@@ -73,7 +71,11 @@ def validate_args(
     return args_dict
 
 
-def generate_task_id(job_id: str | None=None, state: str | None=None, pathogen: str | None=None):
+def generate_task_id(
+    job_id: UUID | None = None,
+    state: str | None = None,
+    pathogen: str | None = None,
+) -> str:
     """Generates a task_id which consists of the hex code of the job_id
     and information on the state and pathogen.
     Parameters:
@@ -85,13 +87,12 @@ def generate_task_id(job_id: str | None=None, state: str | None=None, pathogen: 
 
 
 def generate_task_configs(
-    state=None,
-    pathogen=None,
-    report_date=None,
-    reference_date=None,
-    as_of_date=None,
-    job_id=None,
-    data_source=None,
+    state: list | None = None,
+    pathogen: list | None = None,
+    report_date: date | None = None,
+    reference_dates: list[date] | None = None,
+    as_of_date: int | None = None,
+    job_id: UUID | None = None,
 ) -> list[dict]:
     """
     Generates a list of configuration objects based on
@@ -100,10 +101,9 @@ def generate_task_configs(
         state: geography to run model
         pathogen: pathogen to run
         report_date: date of model run
-        reference_date: array of reference (event) dates
+        reference_dates: array of reference (event) dates
         as_of_date: timestamp of model run
         job_id: UUID for job
-        data_source: source of input data
     Returns:
         A list of configuration objects.
     """
@@ -125,11 +125,7 @@ def generate_task_configs(
                     "path": "gold/",
                     "blob_storage_container": None,
                     "report_date": [report_date],
-                    "reference_date": [
-                        "2023-01-01",
-                        "2022-12-30",
-                        "2022-12-29",
-                    ],
+                    "reference_date": reference_dates,
                 },
                 "seed": shared_params["seed"],
                 "horizon": shared_params["horizon"],
