@@ -21,7 +21,9 @@ if __name__ == "__main__":
     # Pull run parameters from environment
     state = os.environ.get("state", "all")
     pathogen = os.environ.get("pathogen", "all")
-    report_date = os.environ.get("report_date", datetime.today().strftime("%Y-%m-%d"))
+    report_date = os.environ.get(
+        "report_date", datetime.today().strftime("%Y-%m-%d")
+    )
     reference_date = os.environ.get("reference_date", [report_date])
     data_source = os.environ.get("data_source", "nssp")
 

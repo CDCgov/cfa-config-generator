@@ -1,6 +1,12 @@
+from datetime import datetime
 from uuid import uuid1
-from datetime import datetime, timedelta
-from utils.epinow2.constants import states, pathogens, nssp_states_omit, shared_params
+
+from utils.epinow2.constants import (
+    nssp_states_omit,
+    pathogens,
+    shared_params,
+    states,
+)
 
 
 def generate_job_id():
@@ -12,7 +18,11 @@ def generate_job_id():
 
 
 def validate_args(
-    state=None, pathogen=None, report_date=None, reference_date=None, data_source=None
+    state=None,
+    pathogen=None,
+    report_date=None,
+    reference_date=None,
+    data_source=None,
 ):
     """Checks that user-supplied arguments are valid and returns them
     in a standardized format for downstream use.
@@ -48,7 +58,9 @@ def validate_args(
         args_dict["pathogen"] = [pathogen]
 
     # Convert dates to datetime
-    reference_datetime = [datetime.strptime(x, "%Y-%m-%d") for x in reference_date]
+    reference_datetime = [
+        datetime.strptime(x, "%Y-%m-%d") for x in reference_date
+    ]
     report_datetime = datetime.strptime(report_date, "%Y-%m-%d")
 
     # Check valid reference_date
@@ -101,7 +113,9 @@ def generate_task_configs(
         for p in pathogen:
             task_config = {
                 "job_id": str(job_id),
-                "task_id": generate_task_id(job_id=job_id, state=s, pathogen=p),
+                "task_id": generate_task_id(
+                    job_id=job_id, state=s, pathogen=p
+                ),
                 "as_of_date": as_of_date,
                 "disease": p,
                 "geo_value": [s],
@@ -111,7 +125,11 @@ def generate_task_configs(
                     "path": "gold/",
                     "blob_storage_container": None,
                     "report_date": [report_date],
-                    "reference_date": ["2023-01-01", "2022-12-30", "2022-12-29"],
+                    "reference_date": [
+                        "2023-01-01",
+                        "2022-12-30",
+                        "2022-12-29",
+                    ],
                 },
                 "seed": shared_params["seed"],
                 "horizon": shared_params["horizon"],
