@@ -73,7 +73,7 @@ def validate_args(
     return args_dict
 
 
-def generate_task_id(job_id=None, state=None, pathogen=None):
+def generate_task_id(job_id: str | None=None, state: str | None=None, pathogen: str | None=None):
     """Generates a task_id which consists of the hex code of the job_id
     and information on the state and pathogen.
     Parameters:
