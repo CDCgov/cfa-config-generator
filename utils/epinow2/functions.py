@@ -19,10 +19,10 @@ def generate_job_id():
 
 def validate_args(
     state: str | None = None,
-    pathogen=None,
-    report_date=None,
-    reference_date=None,
-    data_source=None,
+    pathogen: str | None = None,
+    report_date: date | None = None,
+    reference_dates: list[date] | None = None,
+    data_source: str | None = None,
 ):
     """Checks that user-supplied arguments are valid and returns them
     in a standardized format for downstream use.
