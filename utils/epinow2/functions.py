@@ -92,7 +92,7 @@ def generate_task_configs(
     as_of_date=None,
     job_id=None,
     data_source=None,
-):
+) -> list[dict]:
     """
     Generates a list of configuration objects based on
     supplied parameters.
