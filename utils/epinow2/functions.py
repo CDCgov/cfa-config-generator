@@ -40,7 +40,7 @@ def validate_args(
         if data_source == "nssp":
             args_dict["state"] = list(set(states) - set(nssp_states_omit))
         elif data_source == "nhsn":
-            args_dict["state"] = [states]
+            args_dict["state"] = states
         else:
             raise ValueError(f"Data source {data_source} not recognized.")
     elif state not in states:
@@ -119,7 +119,7 @@ def generate_task_configs(
                 "as_of_date": as_of_date,
                 "disease": p,
                 "geo_value": [s],
-                "geo_type": "state",
+                "geo_type": "state" if s != "US" else "country",
                 "parameters": shared_params["parameters"],
                 "data": {
                     "path": "gold/",
