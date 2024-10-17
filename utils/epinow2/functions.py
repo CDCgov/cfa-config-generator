@@ -1,4 +1,4 @@
-from datetime import date, datetime, timezone, timedelta
+from datetime import date, datetime, timedelta, timezone
 from uuid import UUID, uuid1
 
 from utils.epinow2.constants import (

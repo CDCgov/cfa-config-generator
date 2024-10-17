@@ -1,11 +1,12 @@
 import os
 from datetime import date
+
 from utils.epinow2.functions import (
-    generate_uuid,
     generate_task_configs,
     generate_timestamp,
-    validate_args,
+    generate_uuid,
     get_reference_date_range,
+    validate_args,
 )
 
 if __name__ == "__main__":
