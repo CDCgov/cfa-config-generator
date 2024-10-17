@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime, timezone
 from uuid import UUID, uuid1
 
 from utils.epinow2.constants import (
@@ -7,6 +7,11 @@ from utils.epinow2.constants import (
     nssp_states_omit,
     shared_params,
 )
+
+
+def generate_timestamp() -> int:
+    """Generates a timestamp of the current time using UTC timezone."""
+    return int(datetime.timestamp(datetime.now(timezone.utc)))
 
 
 def generate_job_id() -> UUID:
