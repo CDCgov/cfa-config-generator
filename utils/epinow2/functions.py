@@ -42,7 +42,7 @@ def generate_uuid() -> UUID:
 def generate_job_id(job_id: UUID | None = None, as_of_date: int | None = None) -> str:
     """Generate a human-readable slug based on job UUID and as_of_date.
     Parameters:
-        job_uuid: UUID for job
+        job_id: UUID for job
         as_of_date: timestamp of model run
     """
     job_name = f"Rt-estimation-{job_id.hex}-{datetime.fromtimestamp(as_of_date).isoformat()}".replace(
