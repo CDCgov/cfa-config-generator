@@ -4,10 +4,9 @@ from datetime import date
 from utils.epinow2.functions import (
     generate_job_id,
     generate_task_configs,
-    validate_args,
     generate_timestamp,
+    validate_args,
 )
-
 
 if __name__ == "__main__":
     """
