@@ -1,11 +1,11 @@
 import os
 from datetime import date
-
 from utils.epinow2.functions import (
-    generate_job_id,
+    generate_uuid,
     generate_task_configs,
     generate_timestamp,
     validate_args,
+    get_reference_date_range,
 )
 
 if __name__ == "__main__":
@@ -23,8 +23,14 @@ if __name__ == "__main__":
     state = os.environ.get("state", "all")
     disease = os.environ.get("disease", "all")
     report_date = os.environ.get("report_date", date.today())
-    reference_dates = os.environ.get("reference_date", [report_date])
+
+    min_report_date, max_report_date = get_reference_date_range(report_date)
+    reference_dates = os.environ.get(
+        "reference_date", [min_report_date, max_report_date]
+    )
     data_source = os.environ.get("data_source", "nssp")
+    data_path = os.environ.get("data_path", "gold/")
+    data_container = os.environ.get("data_container", None)
 
     # Validate and sanitize args
     sanitized_args = validate_args(
@@ -33,10 +39,12 @@ if __name__ == "__main__":
         report_date=report_date,
         reference_dates=reference_dates,
         data_source=data_source,
+        data_path=data_path,
+        data_container=data_container,
     )
     # Generate job-specific parameters
     as_of_date = generate_timestamp()
-    job_id = generate_job_id()
+    job_id = generate_uuid()
     # Generate task-specific configs
     task_configs = generate_task_configs(
         **sanitized_args, as_of_date=as_of_date, job_id=job_id

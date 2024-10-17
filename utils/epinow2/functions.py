@@ -1,4 +1,4 @@
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timezone, timedelta
 from uuid import UUID, uuid1
 
 from utils.epinow2.constants import (
@@ -14,12 +14,41 @@ def generate_timestamp() -> int:
     return int(datetime.timestamp(datetime.now(timezone.utc)))
 
 
-def generate_job_id() -> UUID:
+def get_reference_date_range(report_date: date) -> tuple[date, date]:
+    """Returns a tuple of the minimum and maximum reference dates
+    based on the report date, in the case that no reference_dates
+    are provided.
+    Parameters:
+        report_date: date of model run
+    """
+    # Convert user-provided report_date to date object
+    if isinstance(report_date, str):
+        report_date = date.fromisoformat(report_date)
+
+    max_report_date = report_date - timedelta(days=1)
+    min_report_date = report_date - timedelta(weeks=8)
+
+    return min_report_date, max_report_date
+
+
+def generate_uuid() -> UUID:
     """Generates a UUID1 object to associate
     with job IDs. UUID1 can be sorted by
     timestamp by default, which is desirable
     when managing multiple configurations."""
     return uuid1()
+
+
+def generate_job_id(job_id: UUID | None = None, as_of_date: int | None = None) -> str:
+    """Generate a human-readable slug based on job UUID and as_of_date.
+    Parameters:
+        job_uuid: UUID for job
+        as_of_date: timestamp of model run
+    """
+    job_name = f"Rt-estimation-{job_id.hex}-{datetime.fromtimestamp(as_of_date).isoformat()}".replace(
+        ":", "-"
+    )
+    return job_name
 
 
 def validate_args(
@@ -28,6 +57,8 @@ def validate_args(
     report_date: date | None = None,
     reference_dates: list[date] | None = None,
     data_source: str | None = None,
+    data_path: str | None = None,
+    data_container: str | None = None,
 ) -> dict:
     """Checks that user-supplied arguments are valid and returns them
     in a standardized format for downstream use.
@@ -37,6 +68,8 @@ def validate_args(
         report_date: date of model run
         reference_dates: array of reference (event) dates
         data_source: source of input data
+        data_container: container for input data
+        data_path: path to input data
     Returns:
         A dictionary of sanitized arguments.
     """
@@ -69,6 +102,10 @@ def validate_args(
         date.fromisoformat(x) if isinstance(x, str) else x for x in reference_dates
     ]
 
+    # Standardize report_date
+    if isinstance(report_date, str):
+        report_date = date.fromisoformat(report_date)
+
     # Check valid reference_date
     if not all(ref <= report_date for ref in reference_dates):
         raise ValueError(
@@ -76,6 +113,8 @@ def validate_args(
         )
     args_dict["reference_dates"] = reference_dates
     args_dict["report_date"] = report_date
+    args_dict["data_path"] = data_path
+    args_dict["data_container"] = data_container
     return args_dict
 
 
@@ -99,6 +138,8 @@ def generate_task_configs(
     disease: list | None = None,
     report_date: date | None = None,
     reference_dates: list[date] | None = None,
+    data_container: str | None = None,
+    data_path: str | None = None,
     as_of_date: int | None = None,
     job_id: UUID | None = None,
 ) -> list[dict]:
@@ -120,7 +161,7 @@ def generate_task_configs(
     for s in state:
         for d in disease:
             task_config = {
-                "job_id": str(job_id),
+                "job_id": generate_job_id(job_id=job_id, as_of_date=as_of_date),
                 "task_id": generate_task_id(job_id=job_id, state=s, disease=d),
                 "as_of_date": as_of_date,
                 "disease": d,
@@ -128,10 +169,10 @@ def generate_task_configs(
                 "geo_type": "state" if s != "US" else "country",
                 "parameters": shared_params["parameters"],
                 "data": {
-                    "path": "gold/",
-                    "blob_storage_container": None,
-                    "report_date": [report_date],
-                    "reference_date": reference_dates,
+                    "path": data_path,
+                    "blob_storage_container": data_container,
+                    "report_date": [report_date.isoformat()],
+                    "reference_date": [x.isoformat() for x in reference_dates],
                 },
                 "seed": shared_params["seed"],
                 "horizon": shared_params["horizon"],
