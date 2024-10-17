@@ -25,9 +25,9 @@ if __name__ == "__main__":
     disease = os.environ.get("disease", "all")
     report_date = os.environ.get("report_date", date.today())
 
-    min_report_date, max_report_date = get_reference_date_range(report_date)
+    min_reference_date, max_reference_date = get_reference_date_range(report_date)
     reference_dates = os.environ.get(
-        "reference_date", [min_report_date, max_report_date]
+        "reference_date", [min_reference_date, max_reference_date]
     )
     data_source = os.environ.get("data_source", "nssp")
     data_path = os.environ.get("data_path", "gold/")

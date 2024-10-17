@@ -25,10 +25,10 @@ def get_reference_date_range(report_date: date) -> tuple[date, date]:
     if isinstance(report_date, str):
         report_date = date.fromisoformat(report_date)
 
-    max_report_date = report_date - timedelta(days=1)
-    min_report_date = report_date - timedelta(weeks=8)
+    max_reference_date = report_date - timedelta(days=1)
+    min_reference_date = report_date - timedelta(weeks=8)
 
-    return min_report_date, max_report_date
+    return min_reference_date, max_reference_date
 
 
 def generate_uuid() -> UUID:
