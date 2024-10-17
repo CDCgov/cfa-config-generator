@@ -1,7 +1,6 @@
 import os
 from datetime import date, datetime, timezone
 
-
 from utils.epinow2.functions import (
     generate_job_id,
     generate_task_configs,

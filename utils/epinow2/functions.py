@@ -2,10 +2,10 @@ from datetime import date
 from uuid import UUID, uuid1
 
 from utils.epinow2.constants import (
-    nssp_states_omit,
     all_diseases,
-    shared_params,
     all_states,
+    nssp_states_omit,
+    shared_params,
 )
 
 
