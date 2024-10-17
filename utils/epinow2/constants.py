@@ -14,7 +14,7 @@ shared_params = {
     },
 }
 
-states = [
+all_states = [
     "AK",
     "AL",
     "AR",
@@ -71,5 +71,5 @@ states = [
 ]
 
 nssp_states_omit = ["AS", "FM", "MH", "NP", "PR", "PW", "VI", "MO", "GU"]
-pathogens = ["COVID-19", "Influenza"]
+all_diseases = ["COVID-19", "Influenza"]
 data_sources = ["nhsn", "nssp"]

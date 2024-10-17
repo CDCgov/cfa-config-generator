@@ -1,5 +1,6 @@
 import os
-from datetime import date, datetime
+from datetime import date, datetime, timezone
+
 
 from utils.epinow2.functions import (
     generate_job_id,
@@ -20,7 +21,7 @@ if __name__ == "__main__":
 
     # Pull run parameters from environment
     state = os.environ.get("state", "all")
-    pathogen = os.environ.get("pathogen", "all")
+    disease = os.environ.get("disease", "all")
     report_date = os.environ.get("report_date", date.today())
     reference_dates = os.environ.get("reference_date", [report_date])
     data_source = os.environ.get("data_source", "nhsn")
@@ -28,16 +29,14 @@ if __name__ == "__main__":
     # Validate and sanitize args
     sanitized_args = validate_args(
         state=state,
-        pathogen=pathogen,
+        disease=disease,
         report_date=report_date,
         reference_dates=reference_dates,
         data_source=data_source,
     )
-
     # Generate job-specific parameters
-    as_of_date = int(datetime.timestamp(datetime.now()))
+    as_of_date = int(datetime.timestamp(datetime.now(timezone.utc)))
     job_id = generate_job_id()
-
     # Generate task-specific configs
     task_configs = generate_task_configs(
         **sanitized_args, as_of_date=as_of_date, job_id=job_id

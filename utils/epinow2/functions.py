@@ -3,9 +3,9 @@ from uuid import UUID, uuid1
 
 from utils.epinow2.constants import (
     nssp_states_omit,
-    pathogens,
+    all_diseases,
     shared_params,
-    states,
+    all_states,
 )
 
 
@@ -19,7 +19,7 @@ def generate_job_id() -> UUID:
 
 def validate_args(
     state: str | None = None,
-    pathogen: str | None = None,
+    disease: str | None = None,
     report_date: date | None = None,
     reference_dates: list[date] | None = None,
     data_source: str | None = None,
@@ -28,7 +28,7 @@ def validate_args(
     in a standardized format for downstream use.
     Parameters:
         state: geography to run model
-        pathogen: pathogen to run
+        disease: disease to run
         report_date: date of model run
         reference_dates: array of reference (event) dates
         data_source: source of input data
@@ -38,27 +38,30 @@ def validate_args(
     args_dict = {}
     if state == "all":
         if data_source == "nssp":
-            args_dict["state"] = list(set(states) - set(nssp_states_omit))
+            args_dict["state"] = list(set(all_states) - set(nssp_states_omit))
         elif data_source == "nhsn":
-            args_dict["state"] = states
+            args_dict["state"] = all_states
         else:
-            raise ValueError(f"Data source {data_source} not recognized.")
-    elif state not in states:
+            raise ValueError(
+                f"Data source {data_source} not recognized. Valid options are 'nssp' or 'nhsn'."
+            )
+    elif state not in all_states:
         raise ValueError(f"State {state} not recognized.")
     else:
         args_dict["state"] = [state]
 
-    if pathogen == "all":
-        args_dict["pathogen"] = pathogens
-    elif pathogen not in pathogens:
-        raise ValueError(f"Pathogen {pathogen} not recognized.")
+    if disease == "all":
+        args_dict["disease"] = all_diseases
+    elif disease not in all_diseases:
+        raise ValueError(
+            f"Disease {disease} not recognized. Valid options are 'COVID-19' or 'Influenza'."
+        )
     else:
-        args_dict["pathogen"] = [pathogen]
+        args_dict["disease"] = [disease]
 
     # Standardize reference_dates
     reference_dates = [
-        date.fromisoformat(x) if isinstance(x, str) else x
-        for x in reference_dates
+        date.fromisoformat(x) if isinstance(x, str) else x for x in reference_dates
     ]
 
     # Check valid reference_date
@@ -74,21 +77,21 @@ def validate_args(
 def generate_task_id(
     job_id: UUID | None = None,
     state: str | None = None,
-    pathogen: str | None = None,
+    disease: str | None = None,
 ) -> str:
     """Generates a task_id which consists of the hex code of the job_id
     and information on the state and pathogen.
     Parameters:
         job_id: UUID of job
         state: state being run
-        pathogen: pathogen being run
+        disease: disease being run
     """
-    return f"{job_id.hex}_{state}_{pathogen}"
+    return f"{job_id.hex}_{state}_{disease}"
 
 
 def generate_task_configs(
     state: list | None = None,
-    pathogen: list | None = None,
+    disease: list | None = None,
     report_date: date | None = None,
     reference_dates: list[date] | None = None,
     as_of_date: int | None = None,
@@ -99,7 +102,7 @@ def generate_task_configs(
     supplied parameters.
     Parameters:
         state: geography to run model
-        pathogen: pathogen to run
+        disease: pathogen to run
         report_date: date of model run
         reference_dates: array of reference (event) dates
         as_of_date: timestamp of model run
@@ -110,14 +113,12 @@ def generate_task_configs(
     configs = []
     # Create tasks for each state-pathogen combination
     for s in state:
-        for p in pathogen:
+        for d in disease:
             task_config = {
                 "job_id": str(job_id),
-                "task_id": generate_task_id(
-                    job_id=job_id, state=s, pathogen=p
-                ),
+                "task_id": generate_task_id(job_id=job_id, state=s, disease=d),
                 "as_of_date": as_of_date,
-                "disease": p,
+                "disease": d,
                 "geo_value": [s],
                 "geo_type": "state" if s != "US" else "country",
                 "parameters": shared_params["parameters"],
