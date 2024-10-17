@@ -153,6 +153,8 @@ def generate_task_configs(
         reference_dates: array of reference (event) dates
         as_of_date: timestamp of model run
         job_id: UUID for job
+        data_container: container for input data
+        data_path: path to input data
     Returns:
         A list of configuration objects.
     """
