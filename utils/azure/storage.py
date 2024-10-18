@@ -3,8 +3,7 @@ from azure.storage.blob import BlobServiceClient
 
 
 def instantiate_blob_client(
-    sp_credential: DefaultAzureCredential | None = None,
-    account_url: str | None = None
+    sp_credential: DefaultAzureCredential | None = None, account_url: str | None = None
 ) -> BlobServiceClient:
     """Function to instantiate blob storage client to interact
     with Azure Storage.
@@ -23,8 +22,6 @@ def instantiate_blob_client(
         raise ValueError("Service principal credential not provided.")
 
     # Instantiate BlobStorageClient
-    blob_service_client = BlobServiceClient(
-        account_url, credential=sp_credential
-    )
+    blob_service_client = BlobServiceClient(account_url, credential=sp_credential)
 
     return blob_service_client
