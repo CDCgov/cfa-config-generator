@@ -1,6 +1,6 @@
+import os
 from datetime import date, datetime, timedelta, timezone
 from uuid import UUID, uuid1
-import os
 
 from utils.epinow2.constants import (
     all_diseases,
@@ -10,7 +10,8 @@ from utils.epinow2.constants import (
 )
 
 
-def extract_user_args():
+def extract_user_args() -> dict:
+    """Extracts user-provided arguments from environment variables or uses default if none provided."""
     state = os.environ.get("state", "all")
     disease = os.environ.get("disease", "all")
     report_date = os.environ.get("report_date", date.today())
@@ -147,13 +148,15 @@ def generate_task_id(
     disease: str | None = None,
 ) -> str:
     """Generates a task_id which consists of the hex code of the job_id
-    and information on the state and pathogen.
+    and information on the state and pathogen. Also timestamps the task
+    in case they are updated at different times.
     Parameters:
         job_id: UUID of job
         state: state being run
         disease: disease being run
     """
-    return f"{job_id.hex}_{state}_{disease}"
+    timestamp = generate_timestamp()
+    return f"{job_id.hex}_{state}_{disease}_{timestamp}"
 
 
 def generate_task_configs(
@@ -165,7 +168,7 @@ def generate_task_configs(
     data_path: str | None = None,
     as_of_date: int | None = None,
     job_id: UUID | None = None,
-) -> list[dict]:
+) -> tuple[list[dict], str]:
     """
     Generates a list of configuration objects based on
     supplied parameters.
@@ -183,10 +186,11 @@ def generate_task_configs(
     """
     configs = []
     # Create tasks for each state-pathogen combination
+    job_name = generate_job_name(job_id=job_id, as_of_date=as_of_date)
     for s in state:
         for d in disease:
             task_config = {
-                "job_id": generate_job_name(job_id=job_id, as_of_date=as_of_date),
+                "job_id": job_name,
                 "task_id": generate_task_id(job_id=job_id, state=s, disease=d),
                 "as_of_date": as_of_date,
                 "disease": d,
@@ -205,4 +209,4 @@ def generate_task_configs(
                 "sampler_opts": shared_params["sampler_opts"],
             }
             configs.append(task_config)
-    return configs
+    return configs, job_name
