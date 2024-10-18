@@ -9,6 +9,7 @@ from utils.epinow2.constants import (
     shared_params,
 )
 
+
 def extract_user_args():
     state = os.environ.get("state", "all")
     disease = os.environ.get("disease", "all")
@@ -27,7 +28,7 @@ def extract_user_args():
         "reference_dates": reference_dates,
         "data_source": data_source,
         "data_path": data_path,
-        "data_container": data_container
+        "data_container": data_container,
     }
 
 
@@ -61,7 +62,7 @@ def generate_uuid() -> UUID:
     return uuid1()
 
 
-def generate_job_id(job_id: UUID | None = None, as_of_date: int | None = None) -> str:
+def generate_job_name(job_id: UUID | None = None, as_of_date: int | None = None) -> str:
     """Generate a human-readable slug based on job UUID and as_of_date.
     Parameters:
         job_id: UUID for job
@@ -185,7 +186,7 @@ def generate_task_configs(
     for s in state:
         for d in disease:
             task_config = {
-                "job_id": generate_job_id(job_id=job_id, as_of_date=as_of_date),
+                "job_id": generate_job_name(job_id=job_id, as_of_date=as_of_date),
                 "task_id": generate_task_id(job_id=job_id, state=s, disease=d),
                 "as_of_date": as_of_date,
                 "disease": d,
