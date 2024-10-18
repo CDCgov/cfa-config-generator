@@ -1,14 +1,16 @@
+import json
+import logging
+
 from utils.azure.auth import obtain_sp_credential
 from utils.azure.storage import instantiate_blob_client
 from utils.epinow2.constants import azure_storage
 from utils.epinow2.functions import (
+    extract_user_args,
     generate_task_configs,
     generate_timestamp,
     generate_uuid,
-    extract_user_args,
     validate_args,
 )
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +34,7 @@ if __name__ == "__main__":
     as_of_date = generate_timestamp()
     job_id = generate_uuid()
     # Generate task-specific configs
-    task_configs = generate_task_configs(
+    task_configs, job_name = generate_task_configs(
         **sanitized_args, as_of_date=as_of_date, job_id=job_id
     )
 
@@ -43,8 +45,14 @@ if __name__ == "__main__":
             sp_credential=sp_credential,
             account_url=azure_storage["azure_storage_account_url"],
         )
-        container_client = storage_client.get_container_client(container="nssp-etl")
-        print([x for x in container_client.list_blobs()])
+        container_client = storage_client.get_container_client(
+            container=azure_storage["azure_container_name"]
+        )
+        for task in task_configs:
+            blob_name = f"{job_name}/{task['task_id']}.json"
+            container_client.upload_blob(
+                name=blob_name, data=json.dumps(task), overwrite=True
+            )
     except (LookupError, ValueError) as e:
         logger.error(f"Error pushing to Azure: {e}")
         raise e
