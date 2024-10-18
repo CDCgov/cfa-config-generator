@@ -1,5 +1,6 @@
 from datetime import date, datetime, timedelta, timezone
 from uuid import UUID, uuid1
+import os
 
 from utils.epinow2.constants import (
     all_diseases,
@@ -7,6 +8,27 @@ from utils.epinow2.constants import (
     nssp_states_omit,
     shared_params,
 )
+
+def extract_user_args():
+    state = os.environ.get("state", "all")
+    disease = os.environ.get("disease", "all")
+    report_date = os.environ.get("report_date", date.today())
+    min_reference_date, max_reference_date = get_reference_date_range(report_date)
+    reference_dates = os.environ.get(
+        "reference_date", [min_reference_date, max_reference_date]
+    )
+    data_source = os.environ.get("data_source", "nssp")
+    data_path = os.environ.get("data_path", "gold/")
+    data_container = os.environ.get("data_container", None)
+    return {
+        "state": state,
+        "disease": disease,
+        "report_date": report_date,
+        "reference_dates": reference_dates,
+        "data_source": data_source,
+        "data_path": data_path,
+        "data_container": data_container
+    }
 
 
 def generate_timestamp() -> int:
