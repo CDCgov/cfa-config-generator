@@ -73,3 +73,8 @@ all_states = [
 nssp_states_omit = ["AS", "FM", "MH", "NP", "PR", "PW", "VI", "MO", "GU"]
 all_diseases = ["COVID-19", "Influenza"]
 data_sources = ["nhsn", "nssp"]
+
+azure_storage = {
+    "azure_storage_account_url": "https://cfaazurebatchprd.blob.core.windows.net/",
+    "azure_container_name": "rt-epinow2-config",
+}

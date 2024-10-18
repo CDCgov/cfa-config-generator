@@ -1,13 +1,18 @@
-import os
-from datetime import date
+import json
+import logging
 
+from utils.azure.auth import obtain_sp_credential
+from utils.azure.storage import instantiate_blob_client
+from utils.epinow2.constants import azure_storage
 from utils.epinow2.functions import (
+    extract_user_args,
     generate_task_configs,
     generate_timestamp,
     generate_uuid,
-    get_reference_date_range,
     validate_args,
 )
+
+logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
     """
@@ -21,32 +26,37 @@ if __name__ == "__main__":
     """
 
     # Pull run parameters from environment
-    state = os.environ.get("state", "all")
-    disease = os.environ.get("disease", "all")
-    report_date = os.environ.get("report_date", date.today())
-
-    min_reference_date, max_reference_date = get_reference_date_range(report_date)
-    reference_dates = os.environ.get(
-        "reference_date", [min_reference_date, max_reference_date]
-    )
-    data_source = os.environ.get("data_source", "nssp")
-    data_path = os.environ.get("data_path", "gold/")
-    data_container = os.environ.get("data_container", None)
+    user_args = extract_user_args()
 
     # Validate and sanitize args
-    sanitized_args = validate_args(
-        state=state,
-        disease=disease,
-        report_date=report_date,
-        reference_dates=reference_dates,
-        data_source=data_source,
-        data_path=data_path,
-        data_container=data_container,
-    )
+    sanitized_args = validate_args(**user_args)
     # Generate job-specific parameters
     as_of_date = generate_timestamp()
     job_id = generate_uuid()
     # Generate task-specific configs
-    task_configs = generate_task_configs(
+    task_configs, job_name = generate_task_configs(
         **sanitized_args, as_of_date=as_of_date, job_id=job_id
+    )
+
+    # Push task configs to Azure Blob Storage
+    try:
+        sp_credential = obtain_sp_credential()
+        storage_client = instantiate_blob_client(
+            sp_credential=sp_credential,
+            account_url=azure_storage["azure_storage_account_url"],
+        )
+        container_client = storage_client.get_container_client(
+            container=azure_storage["azure_container_name"]
+        )
+        for task in task_configs:
+            blob_name = f"{job_name}/{task['task_id']}.json"
+            container_client.upload_blob(
+                name=blob_name, data=json.dumps(task), overwrite=True
+            )
+    except (LookupError, ValueError) as e:
+        logger.error(f"Error pushing to Azure: {e}")
+        raise e
+
+    logger.info(
+        f"Successfully generated configs for job: {job_id}. Tasks stored in {job_name} directory"
     )
