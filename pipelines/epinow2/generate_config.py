@@ -58,5 +58,5 @@ if __name__ == "__main__":
         raise e
 
     logger.info(
-        f"Successfully generated configs for job: {job_id}. Tasks stored: {len(task_configs)}"
+        f"Successfully generated configs for job: {job_id}. Tasks stored in {job_name} directory"
     )
