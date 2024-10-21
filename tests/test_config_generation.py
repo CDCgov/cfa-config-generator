@@ -1,11 +1,13 @@
 from datetime import date, timedelta
-from utils.epinow2.functions import (
-    validate_args,
-    generate_task_configs,
-    generate_uuid,
-    generate_timestamp
-)
+
 from utils.epinow2.constants import all_diseases, all_states, nssp_states_omit
+from utils.epinow2.functions import (
+    generate_task_configs,
+    generate_timestamp,
+    generate_uuid,
+    validate_args,
+)
+
 
 def test_default_config_set():
     """Tests that the default set of configs is generated correctly."""
@@ -29,8 +31,11 @@ def test_default_config_set():
     task_configs, _ = generate_task_configs(
         **validated_args, as_of_date=as_of_date, job_id=job_id
     )
-    total_tasks_expected = len(list(set(all_states) - set(nssp_states_omit))) * len(all_diseases)
+    total_tasks_expected = len(list(set(all_states) - set(nssp_states_omit))) * len(
+        all_diseases
+    )
     assert len(task_configs) == total_tasks_expected
+
 
 def test_single_geo_disease_set():
     """Tests that a single geography-disease combination returns a single task."""
