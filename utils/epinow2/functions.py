@@ -1,3 +1,4 @@
+import os
 from datetime import date, datetime, timedelta, timezone
 from uuid import UUID, uuid1
 
@@ -7,6 +8,29 @@ from utils.epinow2.constants import (
     nssp_states_omit,
     shared_params,
 )
+
+
+def extract_user_args() -> dict:
+    """Extracts user-provided arguments from environment variables or uses default if none provided."""
+    state = os.environ.get("state", "all")
+    disease = os.environ.get("disease", "all")
+    report_date = os.environ.get("report_date", date.today())
+    min_reference_date, max_reference_date = get_reference_date_range(report_date)
+    reference_dates = os.environ.get(
+        "reference_dates", [min_reference_date, max_reference_date]
+    )
+    data_source = os.environ.get("data_source", "nssp")
+    data_path = os.environ.get("data_path", "gold/")
+    data_container = os.environ.get("data_container", None)
+    return {
+        "state": state,
+        "disease": disease,
+        "report_date": report_date,
+        "reference_dates": reference_dates,
+        "data_source": data_source,
+        "data_path": data_path,
+        "data_container": data_container,
+    }
 
 
 def generate_timestamp() -> int:
@@ -39,7 +63,7 @@ def generate_uuid() -> UUID:
     return uuid1()
 
 
-def generate_job_id(job_id: UUID | None = None, as_of_date: int | None = None) -> str:
+def generate_job_name(job_id: UUID | None = None, as_of_date: int | None = None) -> str:
     """Generate a human-readable slug based on job UUID and as_of_date.
     Parameters:
         job_id: UUID for job
@@ -98,9 +122,14 @@ def validate_args(
         args_dict["disease"] = [disease]
 
     # Standardize reference_dates
-    reference_dates = [
-        date.fromisoformat(x) if isinstance(x, str) else x for x in reference_dates
-    ]
+    if isinstance(reference_dates, str):
+        try:
+            min_ref, max_ref = reference_dates.split(",")
+            reference_dates = [date.fromisoformat(min_ref), date.fromisoformat(max_ref)]
+        except ValueError:
+            raise ValueError(
+                "Invalid reference_dates. Ensure they are in the format 'YYYY-MM-DD,YYYY-MM-DD'."
+            )
 
     # Standardize report_date
     if isinstance(report_date, str):
@@ -124,13 +153,15 @@ def generate_task_id(
     disease: str | None = None,
 ) -> str:
     """Generates a task_id which consists of the hex code of the job_id
-    and information on the state and pathogen.
+    and information on the state and pathogen. Also timestamps the task
+    in case they are updated at different times.
     Parameters:
         job_id: UUID of job
         state: state being run
         disease: disease being run
     """
-    return f"{job_id.hex}_{state}_{disease}"
+    timestamp = generate_timestamp()
+    return f"{job_id.hex}_{state}_{disease}_{timestamp}"
 
 
 def generate_task_configs(
@@ -142,7 +173,7 @@ def generate_task_configs(
     data_path: str | None = None,
     as_of_date: int | None = None,
     job_id: UUID | None = None,
-) -> list[dict]:
+) -> tuple[list[dict], str]:
     """
     Generates a list of configuration objects based on
     supplied parameters.
@@ -160,10 +191,11 @@ def generate_task_configs(
     """
     configs = []
     # Create tasks for each state-pathogen combination
+    job_name = generate_job_name(job_id=job_id, as_of_date=as_of_date)
     for s in state:
         for d in disease:
             task_config = {
-                "job_id": generate_job_id(job_id=job_id, as_of_date=as_of_date),
+                "job_id": job_name,
                 "task_id": generate_task_id(job_id=job_id, state=s, disease=d),
                 "as_of_date": as_of_date,
                 "disease": d,
@@ -182,4 +214,4 @@ def generate_task_configs(
                 "sampler_opts": shared_params["sampler_opts"],
             }
             configs.append(task_config)
-    return configs
+    return configs, job_name
