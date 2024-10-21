@@ -17,7 +17,7 @@ def extract_user_args() -> dict:
     report_date = os.environ.get("report_date", date.today())
     min_reference_date, max_reference_date = get_reference_date_range(report_date)
     reference_dates = os.environ.get(
-        "reference_date", [min_reference_date, max_reference_date]
+        "reference_dates", [min_reference_date, max_reference_date]
     )
     data_source = os.environ.get("data_source", "nssp")
     data_path = os.environ.get("data_path", "gold/")
@@ -33,9 +33,9 @@ def extract_user_args() -> dict:
     }
 
 
-def generate_timestamp() -> int:
+def generate_timestamp() -> str:
     """Generates a timestamp of the current time using UTC timezone."""
-    return int(datetime.timestamp(datetime.now(timezone.utc)))
+    return str(int(datetime.timestamp(datetime.now(timezone.utc))))
 
 
 def get_reference_date_range(report_date: date) -> tuple[date, date]:
@@ -122,9 +122,14 @@ def validate_args(
         args_dict["disease"] = [disease]
 
     # Standardize reference_dates
-    reference_dates = [
-        date.fromisoformat(x) if isinstance(x, str) else x for x in reference_dates
-    ]
+    if isinstance(reference_dates, str):
+        try:
+            min_ref, max_ref = reference_dates.split(",")
+            reference_dates = [date.fromisoformat(min_ref), date.fromisoformat(max_ref)]
+        except ValueError:
+            raise ValueError(
+                "Invalid reference_dates. Ensure they are in the format 'YYYY-MM-DD,YYYY-MM-DD'."
+            )
 
     # Standardize report_date
     if isinstance(report_date, str):
