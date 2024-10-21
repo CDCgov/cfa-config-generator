@@ -31,7 +31,9 @@ def test_default_config_set():
     task_configs, _ = generate_task_configs(
         **validated_args, as_of_date=as_of_date, job_id=job_id
     )
-    total_tasks_expected = len(set(all_states).difference(nssp_states_omit)) * len(all_diseases)
+    total_tasks_expected = len(set(all_states).difference(nssp_states_omit)) * len(
+        all_diseases
+    )
     assert len(task_configs) == total_tasks_expected
 
 
