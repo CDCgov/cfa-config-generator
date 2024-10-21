@@ -3,7 +3,7 @@ from azure.storage.blob import BlobServiceClient
 
 
 def instantiate_blob_client(
-    sp_credential: DefaultAzureCredential | None = None, account_url: str | None = None
+    sp_credential: DefaultAzureCredential | None = None, account_url: str = ""
 ) -> BlobServiceClient:
     """Function to instantiate blob storage client to interact
     with Azure Storage.
