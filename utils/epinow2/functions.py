@@ -33,9 +33,9 @@ def extract_user_args() -> dict:
     }
 
 
-def generate_timestamp() -> str:
+def generate_timestamp() -> int:
     """Generates a timestamp of the current time using UTC timezone."""
-    return str(int(datetime.timestamp(datetime.now(timezone.utc))))
+    return int(datetime.timestamp(datetime.now(timezone.utc)))
 
 
 def get_reference_date_range(report_date: date) -> tuple[date, date]:
