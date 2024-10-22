@@ -60,7 +60,7 @@ jobs:
 
       - name: set pythonpath
         run: |
-          echo "$PWD"
+          echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
 
       - name: Execute workload script
         run: |
