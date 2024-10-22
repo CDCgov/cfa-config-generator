@@ -60,7 +60,7 @@ jobs:
 
       - name: set pythonpath
         run: |
-          echo "PYTHONPATH=cfa-config-generator" >> $GITHUB_ENV
+          echo "$PWD"
 
       - name: Execute workload script
         run: |
