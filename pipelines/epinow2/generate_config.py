@@ -27,7 +27,6 @@ if __name__ == "__main__":
 
     # Pull run parameters from environment
     user_args = extract_user_args()
-    print(user_args)
 
     # Validate and sanitize args
     sanitized_args = validate_args(**user_args)
