@@ -58,6 +58,10 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: set pythonpath
+        run: |
+          echo "PYTHONPATH=cfa-config-generator" >> $GITHUB_ENV
+
       - name: Execute workload script
         run: |
           state=${{ github.event.inputs.state }} \
