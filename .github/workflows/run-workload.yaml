@@ -34,6 +34,7 @@ jobs:
 
   run-workload:
     runs-on: cfa-cdcgov
+    environment: production
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
