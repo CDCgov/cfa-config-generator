@@ -62,5 +62,3 @@ jobs:
           state=${{ github.event.inputs.state }} \
             disease=${{ github.event.inputs.disease}} \
             poetry run python pipelines/epinow2.py
-
-
