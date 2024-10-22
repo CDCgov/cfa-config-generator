@@ -18,7 +18,7 @@ on:
       report-date:
         description: 'Report date (default: today)'
       reference-dates:
-        description: 'Reference dates (default: [8 weeks before, 1 day before] report date)
+        description: 'Reference dates (default: [8 weeks before, 1 day before] report date)'
       data-source:
         description: 'Data source (default: nssp)'
         required: true
@@ -27,7 +27,7 @@ on:
         description: 'Data path (default: gold/)'
         required: true
         default: 'gold/'
-      data-path:
+      data-container:
         description: 'Data path (default: None)'
 
 jobs:
