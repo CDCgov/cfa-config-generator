@@ -62,4 +62,4 @@ jobs:
         run: |
           state=${{ github.event.inputs.state }} \
             disease=${{ github.event.inputs.disease}} \
-            poetry run python pipelines/epinow2.py
+            poetry run python pipelines/epinow2/generate_config.py
