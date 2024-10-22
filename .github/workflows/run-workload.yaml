@@ -16,9 +16,11 @@ on:
         required: true
         default: 'test'
       report-date:
-        description: 'Report date (default: today)'
+        description: 'Report date (default: today; format: YYYY-MM-DD)'
+        default: null
+        required: true
       reference-dates:
-        description: 'Reference dates (default: [8 weeks before, 1 day before] report date)'
+        description: 'Reference dates (default: [8 weeks before, 1 day before] report date; format: YYYY-MM-DD, YYYY-MM-DD)'
       data-source:
         description: 'Data source (default: nssp)'
         required: true
@@ -29,7 +31,8 @@ on:
         default: 'gold/'
       data-container:
         description: 'Data path (default: None)'
-
+        required: true
+        default: null
 jobs:
 
   run-workload:
@@ -64,6 +67,6 @@ jobs:
 
       - name: Execute workload script
         run: |
-          state=${{ github.event.inputs.state }} \
-            disease=${{ github.event.inputs.disease}} \
+          state=${{ inputs.state }} \
+            disease=${{ inputs.disease}} \
             poetry run python pipelines/epinow2/generate_config.py
