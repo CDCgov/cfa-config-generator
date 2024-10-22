@@ -1,8 +1,7 @@
 name: run-workload
-description: Run a workload to create a new modeling job and associated task configs
+description: Run a workload to create a new modeling job and associated task configs.
 
 on:
-  pull_request:
   workflow_dispatch:
     schedule:
       - cron: '0 9 * * 3'
@@ -10,31 +9,33 @@ on:
       state:
         description: 'State to run (default: all)'
         required: true
-        default: 'test'
+        default: 'all'
       disease:
         description: 'Disease to run (default: all)'
         required: true
-        default: 'test'
-      report-date:
+        default: 'all'
+      report_date:
         description: 'Report date (default: today; format: YYYY-MM-DD)'
         default: null
         required: true
-      reference-dates:
+      reference_dates:
         description: 'Reference dates (default: [8 weeks before, 1 day before] report date; format: YYYY-MM-DD, YYYY-MM-DD)'
-      data-source:
+        default: null
+        required: true
+      data_source:
         description: 'Data source (default: nssp)'
         required: true
         default: 'nssp'
-      data-path:
+      data_path:
         description: 'Data path (default: gold/)'
         required: true
         default: 'gold/'
-      data-container:
+      data_container:
         description: 'Data path (default: None)'
         required: true
         default: null
-jobs:
 
+jobs:
   run-workload:
     runs-on: cfa-cdcgov
     environment: production
@@ -68,5 +69,10 @@ jobs:
       - name: Execute workload script
         run: |
           state=${{ inputs.state }} \
-            disease=${{ inputs.disease}} \
+          disease=${{ inputs.disease }} \
+          reference_dates=${{ inputs.reference_dates }} \
+          report_date=${{ inputs.report_date }} \
+          data_source=${{ inputs.data_source }} \
+          data_path=${{ inputs.data_path }} \
+          data_container=${{ inputs.data_container }} \
             poetry run python pipelines/epinow2/generate_config.py
