@@ -15,6 +15,7 @@ def extract_user_args() -> dict:
     state = os.environ.get("state", "all")
     disease = os.environ.get("disease", "all")
     report_date = os.environ.get("report_date", date.today())
+    production_date = os.environ.get("production_date", date.today())
     min_reference_date, max_reference_date = get_reference_date_range(report_date)
     reference_dates = os.environ.get(
         "reference_dates", [min_reference_date, max_reference_date]
@@ -30,6 +31,7 @@ def extract_user_args() -> dict:
         "data_source": data_source,
         "data_path": data_path,
         "data_container": data_container,
+        "production_date": production_date,
     }
 
 
@@ -83,6 +85,7 @@ def validate_args(
     data_source: str | None = None,
     data_path: str | None = None,
     data_container: str | None = None,
+    production_date: date | None = None,
 ) -> dict:
     """Checks that user-supplied arguments are valid and returns them
     in a standardized format for downstream use.
@@ -94,6 +97,7 @@ def validate_args(
         data_source: source of input data
         data_container: container for input data
         data_path: path to input data
+        production_date: production date of model run
     Returns:
         A dictionary of sanitized arguments.
     """
@@ -131,9 +135,12 @@ def validate_args(
                 "Invalid reference_dates. Ensure they are in the format 'YYYY-MM-DD,YYYY-MM-DD'."
             )
 
-    # Standardize report_date
+    # Standardize report_date and production_date
     if isinstance(report_date, str):
         report_date = date.fromisoformat(report_date)
+
+    if isinstance(production_date, str):
+        production_date = date.fromisoformat(production_date)
 
     # Check valid reference_date
     if not all(ref <= report_date for ref in reference_dates):
@@ -144,6 +151,7 @@ def validate_args(
     args_dict["report_date"] = report_date
     args_dict["data_path"] = data_path
     args_dict["data_container"] = data_container
+    args_dict["production_date"] = production_date
     return args_dict
 
 
@@ -173,6 +181,7 @@ def generate_task_configs(
     data_path: str | None = None,
     as_of_date: int | None = None,
     job_id: UUID | None = None,
+    production_date: date | None = None,
 ) -> tuple[list[dict], str]:
     """
     Generates a list of configuration objects based on
@@ -186,6 +195,7 @@ def generate_task_configs(
         job_id: UUID for job
         data_container: container for input data
         data_path: path to input data
+        production_date: production date of model run
     Returns:
         A list of configuration objects.
     """
@@ -207,6 +217,7 @@ def generate_task_configs(
                     "blob_storage_container": data_container,
                     "report_date": [report_date.isoformat()],
                     "reference_date": [x.isoformat() for x in reference_dates],
+                    "production_date": [production_date.isoformat()],
                 },
                 "seed": shared_params["seed"],
                 "horizon": shared_params["horizon"],

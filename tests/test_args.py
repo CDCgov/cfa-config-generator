@@ -16,6 +16,7 @@ def test_extract_user_args():
         "state": "all",
         "disease": "all",
         "report_date": date.today(),
+        "production_date": date.today(),
         "reference_dates": [min_reference_date, max_reference_date],
         "data_source": "nssp",
         "data_path": "gold/",
@@ -35,6 +36,7 @@ def test_validate_args_default():
         "state": "all",
         "disease": "all",
         "report_date": date.today(),
+        "production_date": date.today(),
         "reference_dates": [min_reference_date, max_reference_date],
         "data_source": "nssp",
         "data_path": "gold/",
@@ -49,6 +51,7 @@ def test_validate_args_default():
         "report_date": report_date,
         "data_path": "gold/",
         "data_container": None,
+        "production_date": date.today(),
     }
 
 
@@ -62,6 +65,7 @@ def test_invalid_state():
         "data_source": "nssp",
         "data_path": "gold/",
         "data_container": None,
+        "production_date": date.today(),
     }
     with pytest.raises(ValueError):
         validate_args(**args)
@@ -77,6 +81,7 @@ def test_invalid_disease():
         "data_source": "nssp",
         "data_path": "gold/",
         "data_container": None,
+        "production_date": date.today(),
     }
     with pytest.raises(ValueError):
         validate_args(**args)
@@ -92,6 +97,7 @@ def test_invalid_reference_date_format():
         "data_source": "nssp",
         "data_path": "gold/",
         "data_container": None,
+        "production_date": date.today(),
     }
     with pytest.raises(ValueError):
         validate_args(**args)
@@ -107,6 +113,7 @@ def test_invalid_reference_date_range():
         "data_source": "nssp",
         "data_path": "gold/",
         "data_container": None,
+        "production_date": date.today(),
     }
     with pytest.raises(ValueError):
         validate_args(**args)
