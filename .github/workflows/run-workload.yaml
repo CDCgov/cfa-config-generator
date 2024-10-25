@@ -8,32 +8,20 @@ on:
     inputs:
       state:
         description: 'State to run (default: all)'
-        required: true
-        default: 'all'
       disease:
         description: 'Disease to run (default: all)'
-        required: true
-        default: 'all'
       report_date:
         description: 'Report date (default: today; format: YYYY-MM-DD)'
-        default: null
-        required: true
       reference_dates:
         description: 'Reference dates (default: [8 weeks before, 1 day before] report date; format: YYYY-MM-DD, YYYY-MM-DD)'
-        default: null
-        required: true
       data_source:
         description: 'Data source (default: nssp)'
-        required: true
-        default: 'nssp'
       data_path:
         description: 'Data path (default: gold/)'
-        required: true
-        default: 'gold/'
       data_container:
         description: 'Data path (default: None)'
-        required: true
-        default: null
+      production_date:
+        description: 'Production date (default: the following Friday; format: YYYY-MM-DD)'
 
 jobs:
   run-workload:
@@ -75,4 +63,5 @@ jobs:
           data_source=${{ inputs.data_source }} \
           data_path=${{ inputs.data_path }} \
           data_container=${{ inputs.data_container }} \
+          production_date=${{ inputs.production_date }} \
             poetry run python pipelines/epinow2/generate_config.py
