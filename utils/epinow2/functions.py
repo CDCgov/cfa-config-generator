@@ -39,6 +39,7 @@ def generate_timestamp() -> int:
     """Generates a timestamp of the current time using UTC timezone."""
     return int(datetime.timestamp(datetime.now(timezone.utc)))
 
+
 def get_reference_date_range(report_date: date) -> tuple[date, date]:
     """Returns a tuple of the minimum and maximum reference dates
     based on the report date, in the case that no reference_dates

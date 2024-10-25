@@ -23,6 +23,7 @@ def test_default_config_set():
         "data_source": "nssp",
         "data_path": "gold/",
         "data_container": None,
+        "production_date": date.today(),
     }
     validated_args = validate_args(**default_args)
     as_of_date = generate_timestamp()
@@ -51,6 +52,7 @@ def test_single_geo_disease_set():
         "data_source": "nssp",
         "data_path": "gold/",
         "data_container": None,
+        "production_date": date.today(),
     }
     validated_args = validate_args(**default_args)
     as_of_date = generate_timestamp()
