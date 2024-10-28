@@ -12,6 +12,7 @@ from utils.epinow2.constants import (
 
 def extract_user_args() -> dict:
     """Extracts user-provided arguments from environment variables or uses default if none provided."""
+    print(os.environ)
     state = os.environ.get("state", "all")
     disease = os.environ.get("disease", "all")
     report_date = os.environ.get("report_date", date.today())
