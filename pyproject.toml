@@ -6,6 +6,10 @@ authors = ["amondal2 <ab59@cdc.gov>"]
 license = "ASL"
 readme = "README.md"
 
+packages = [
+    { include = "cli" }
+]
+
 [tool.poetry.dependencies]
 python = "^3.10"
 azure-storage-blob = "^12.23.1"
@@ -20,3 +24,6 @@ pytest = "^8.3.3"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+confmod = "cli.console:main"
