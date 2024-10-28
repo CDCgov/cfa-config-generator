@@ -12,18 +12,19 @@ from utils.epinow2.constants import (
 
 def extract_user_args() -> dict:
     """Extracts user-provided arguments from environment variables or uses default if none provided."""
-    print(os.environ)
-    state = os.environ.get("state", "all")
-    disease = os.environ.get("disease", "all")
-    report_date = os.environ.get("report_date", date.today())
-    production_date = os.environ.get("production_date", date.today())
+    state = os.environ.get("state") or "all"
+    disease = os.environ.get("disease") or "all"
+    report_date = os.environ.get("report_date") or date.today()
+    production_date = os.environ.get("production_date") or date.today()
     min_reference_date, max_reference_date = get_reference_date_range(report_date)
-    reference_dates = os.environ.get(
-        "reference_dates", [min_reference_date, max_reference_date]
-    )
-    data_source = os.environ.get("data_source", "nssp")
-    data_path = os.environ.get("data_path", "gold/")
-    data_container = os.environ.get("data_container", None)
+    reference_dates = os.environ.get("reference_dates") or [
+        min_reference_date,
+        max_reference_date,
+    ]
+
+    data_source = os.environ.get("data_source") or "nssp"
+    data_path = os.environ.get("data_path") or "gold/"
+    data_container = os.environ.get("data_container") or None
     return {
         "state": state,
         "disease": disease,
@@ -130,7 +131,10 @@ def validate_args(
     if isinstance(reference_dates, str):
         try:
             min_ref, max_ref = reference_dates.split(",")
-            reference_dates = [date.fromisoformat(min_ref), date.fromisoformat(max_ref)]
+            reference_dates = [
+                date.fromisoformat(min_ref),
+                date.fromisoformat(max_ref),
+            ]
         except ValueError:
             raise ValueError(
                 "Invalid reference_dates. Ensure they are in the format 'YYYY-MM-DD,YYYY-MM-DD'."
