@@ -3,9 +3,14 @@ from azure.core.exceptions import ClientAuthenticationError
 from azure.identity import CredentialUnavailableError
 from rich import print
 from rich.console import Console
+from typing_extensions import Annotated
 
 from utils.azure.auth import obtain_sp_credential
-from utils.azure.storage import get_unique_jobs_from_blobs, instantiate_blob_client
+from utils.azure.storage import (
+    get_tasks_for_job_id,
+    get_unique_jobs_from_blobs,
+    instantiate_blob_client,
+)
 from utils.epinow2.constants import azure_storage
 
 app = typer.Typer()
@@ -41,7 +46,7 @@ def list_jobs():
             )
             container_client = blob_client.get_container_client(container_name)
             blob_list = container_client.list_blobs()
-            unique_jobs = get_unique_jobs_from_blobs(blob_list)
+            unique_jobs = get_unique_jobs_from_blobs(blob_list=blob_list)
             console.print(unique_jobs)
         except ValueError as e:
             console.print(
@@ -51,8 +56,31 @@ def list_jobs():
 
 
 @app.command("list-tasks")
-def list_tasks(job_id: str):
-    print(f"Tasks for {job_id}: ")
+def list_tasks(
+    job_id: Annotated[
+        str, typer.Option("--job-id", "-j", help="Job ID to list tasks for")
+    ],
+):
+    container_name = azure_storage["azure_container_name"]
+    with console.status(
+        f"Fetching tasks in {container_name} container for job_id {job_id}...\n",
+        spinner="aesthetic",
+    ):
+        sp_credential = obtain_sp_credential()
+        try:
+            blob_client = instantiate_blob_client(
+                sp_credential=sp_credential,
+                account_url=azure_storage["azure_storage_account_url"],
+            )
+            container_client = blob_client.get_container_client(container_name)
+            blob_list = container_client.list_blobs()
+            tasks_for_job = get_tasks_for_job_id(blob_list=blob_list, job_id=job_id)
+            console.print(tasks_for_job)
+        except ValueError as e:
+            console.print(
+                "[italic red] Error instantiating blob client. Check your credentials."
+            )
+            raise e
 
 
 @app.command("inspect-task")

@@ -27,7 +27,7 @@ def instantiate_blob_client(
     return blob_service_client
 
 
-def get_unique_jobs_from_blobs(blob_list) -> list:
+def get_unique_jobs_from_blobs(blob_list: list = []) -> list:
     """Function to extract unique job IDs from a list of blobs.
     Args:
         blob_list (list): List of blobs from Azure Storage.
@@ -39,3 +39,19 @@ def get_unique_jobs_from_blobs(blob_list) -> list:
         job_id = blob.name.split("/")[0]
         unique_jobs.add(job_id)
     return list(unique_jobs)
+
+
+def get_tasks_for_job_id(blob_list: list = [], job_id: str = "") -> list:
+    """Function to extract tasks for a specific job ID from a list of blobs.
+    Args:
+        blob_list (list): List of blobs from Azure Storage.
+        job_id (str): Job ID to filter tasks by.
+    Returns:
+        list: List of tasks for the specified job ID.
+    """
+    tasks_for_job = []
+    for blob in blob_list:
+        blob_job_id, blob_task_id = blob.name.split("/")
+        if blob_job_id == job_id:
+            tasks_for_job.append(blob_task_id)
+    return tasks_for_job
