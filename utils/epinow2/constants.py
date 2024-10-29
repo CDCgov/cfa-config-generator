@@ -77,4 +77,5 @@ data_sources = ["nhsn", "nssp"]
 azure_storage = {
     "azure_storage_account_url": "https://cfaazurebatchprd.blob.core.windows.net/",
     "azure_container_name": "rt-epinow2-config",
+    "scope_url": "https://cfaazurebatchprd.blob.core.windows.net/.default",
 }

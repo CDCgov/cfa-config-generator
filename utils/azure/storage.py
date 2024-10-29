@@ -25,3 +25,17 @@ def instantiate_blob_client(
     blob_service_client = BlobServiceClient(account_url, credential=sp_credential)
 
     return blob_service_client
+
+
+def get_unique_jobs_from_blobs(blob_list) -> list:
+    """Function to extract unique job IDs from a list of blobs.
+    Args:
+        blob_list (list): List of blobs from Azure Storage.
+    Returns:
+        list: List of unique job IDs.
+    """
+    unique_jobs = set()
+    for blob in blob_list:
+        job_id = blob.name.split("/")[0]
+        unique_jobs.add(job_id)
+    return list(unique_jobs)
