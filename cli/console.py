@@ -1,9 +1,9 @@
 import json
+
 import typer
 from azure.core.exceptions import ClientAuthenticationError, ResourceNotFoundError
 from azure.identity import CredentialUnavailableError
 from rich.console import Console
-from rich.prompt import Prompt
 from typing_extensions import Annotated
 
 from utils.azure.auth import obtain_sp_credential
@@ -12,6 +12,7 @@ from utils.azure.storage import (
     get_unique_jobs_from_blobs,
     instantiate_blob_service_client,
 )
+from utils.cli.functions import update_config
 from utils.epinow2.constants import azure_storage, modifiable_params
 
 app = typer.Typer()
@@ -117,13 +118,16 @@ def inspect_task(
             )
             raise e
 
+
 @app.command("modify-task")
-def modify_task( job_id: Annotated[
+def modify_task(
+    job_id: Annotated[
         str, typer.Option("--job-id", "-j", help="Job ID to list tasks for")
     ],
     task_filename: Annotated[
         str, typer.Option("--task-filename", "-t", help="Task filename to inspect")
-    ]):
+    ],
+):
     sp_credential = obtain_sp_credential()
     full_blob_path = f"{job_id}/{task_filename}"
     try:
@@ -139,8 +143,8 @@ def modify_task( job_id: Annotated[
         task_config = json.loads(blob_text)
         console.print("[bold] :pencil: Modifying task with contents:\n")
         console.print(task_config)
-        updated_config = update_config(task_config, modifiable_params)
-
+        updated_config = update_config(task_config, modifiable_params, console)
+        console.print(updated_config)
 
     except (ResourceNotFoundError, ValueError, ClientAuthenticationError) as e:
         console.print(
@@ -148,20 +152,6 @@ def modify_task( job_id: Annotated[
         )
         raise e
 
-def update_config(config, keys):
-    for key in keys:
-        to_modify = Prompt.ask(f":key: Would you like to modify {key}? (y/n)")
-        if to_modify == "n":
-            continue
-        else:
-            val_to_modify = config.get(key)
-            console.print("[bold] :pencil: Modifying:\n")
-            console.print(val_to_modify)
-            if isinstance(val_to_modify, dict):
-                update_config(val_to_modify, val_to_modify.keys())
-            else:
-                new_val = Prompt.ask(f":key: Enter new value for {key}")
-                print(new_val)
 
 def main():
     app()
