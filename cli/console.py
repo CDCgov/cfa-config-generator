@@ -127,7 +127,7 @@ def modify_task( job_id: Annotated[
     sp_credential = obtain_sp_credential()
     full_blob_path = f"{job_id}/{task_filename}"
     try:
-        blob_client = instantiate_blob_client(
+        blob_client = instantiate_blob_service_client(
             sp_credential=sp_credential,
             account_url=azure_storage["azure_storage_account_url"],
         )
@@ -136,18 +136,32 @@ def modify_task( job_id: Annotated[
         )
         downloader = blob_client.download_blob(max_concurrency=1, encoding="utf-8")
         blob_text = downloader.readall()
+        task_config = json.loads(blob_text)
         console.print("[bold] :pencil: Modifying task with contents:\n")
-        console.print(json.loads(blob_text))
-        task_key = Prompt.ask(f":key: Which task field would you like to modify?\n Your options are: {modifiable_params}")
-        if task_key not in modifiable_params:
-            console.print("[italic red] :triangular_flag: Invalid task field. Please choose from the following options:")
-            console.print(modifiable_params)
+        console.print(task_config)
+        updated_config = update_config(task_config, modifiable_params)
+
+
     except (ResourceNotFoundError, ValueError, ClientAuthenticationError) as e:
         console.print(
             "[italic red] :triangular_flag: Error instantiating blob client or finding specified resource."
         )
         raise e
 
+def update_config(config, keys):
+    for key in keys:
+        to_modify = Prompt.ask(f":key: Would you like to modify {key}? (y/n)")
+        if to_modify == "n":
+            continue
+        else:
+            val_to_modify = config.get(key)
+            console.print("[bold] :pencil: Modifying:\n")
+            console.print(val_to_modify)
+            if isinstance(val_to_modify, dict):
+                update_config(val_to_modify, val_to_modify.keys())
+            else:
+                new_val = Prompt.ask(f":key: Enter new value for {key}")
+                print(new_val)
 
 def main():
     app()
