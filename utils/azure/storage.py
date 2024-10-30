@@ -55,4 +55,4 @@ def get_tasks_for_job_id(blob_list: list | None = None, job_id: str = "") -> lis
         blob_job_id, blob_task_id = blob.name.split("/")
         if blob_job_id == job_id:
             tasks_for_job.append(blob_task_id)
-    return tasks_for_job
+    return sorted(tasks_for_job)
