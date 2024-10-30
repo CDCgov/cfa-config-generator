@@ -2,10 +2,10 @@ from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
 
 
-def instantiate_blob_client(
+def instantiate_blob_service_client(
     sp_credential: DefaultAzureCredential | None = None, account_url: str = ""
 ) -> BlobServiceClient:
-    """Function to instantiate blob storage client to interact
+    """Function to instantiate blob service client to interact
     with Azure Storage.
     Args:
         sp_credential (DefaultAzureCredential): Service principal credential object
@@ -21,13 +21,12 @@ def instantiate_blob_client(
     if not sp_credential:
         raise ValueError("Service principal credential not provided.")
 
-    # Instantiate BlobStorageClient
     blob_service_client = BlobServiceClient(account_url, credential=sp_credential)
 
     return blob_service_client
 
 
-def get_unique_jobs_from_blobs(blob_list: list = []) -> list:
+def get_unique_jobs_from_blobs(blob_list: list | None = None) -> list:
     """Function to extract unique job IDs from a list of blobs.
     Args:
         blob_list (list): List of blobs from Azure Storage.
@@ -35,13 +34,14 @@ def get_unique_jobs_from_blobs(blob_list: list = []) -> list:
         list: List of unique job IDs.
     """
     unique_jobs = set()
+    blob_list = blob_list or []
     for blob in blob_list:
         job_id = blob.name.split("/")[0]
         unique_jobs.add(job_id)
-    return list(unique_jobs)
+    return sorted(unique_jobs)
 
 
-def get_tasks_for_job_id(blob_list: list = [], job_id: str = "") -> list:
+def get_tasks_for_job_id(blob_list: list | None = None, job_id: str = "") -> list:
     """Function to extract tasks for a specific job ID from a list of blobs.
     Args:
         blob_list (list): List of blobs from Azure Storage.
@@ -50,8 +50,14 @@ def get_tasks_for_job_id(blob_list: list = [], job_id: str = "") -> list:
         list: List of tasks for the specified job ID.
     """
     tasks_for_job = []
+    blob_list = blob_list or []
     for blob in blob_list:
-        blob_job_id, blob_task_id = blob.name.split("/")
-        if blob_job_id == job_id:
-            tasks_for_job.append(blob_task_id)
-    return tasks_for_job
+        try:
+            blob_job_id, blob_task_id = blob.name.split("/")
+            if blob_job_id == job_id:
+                tasks_for_job.append(blob_task_id)
+        except ValueError:
+            raise ValueError(
+                "Blob name does not match expected format. Check that blobs are formatted as <job_id>/<task_id>.json."
+            )
+    return sorted(tasks_for_job)
