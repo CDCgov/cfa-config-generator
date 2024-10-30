@@ -1,9 +1,9 @@
 import json
-
 import typer
 from azure.core.exceptions import ClientAuthenticationError, ResourceNotFoundError
 from azure.identity import CredentialUnavailableError
 from rich.console import Console
+from rich.prompt import Prompt
 from typing_extensions import Annotated
 
 from utils.azure.auth import obtain_sp_credential
@@ -12,7 +12,7 @@ from utils.azure.storage import (
     get_unique_jobs_from_blobs,
     instantiate_blob_client,
 )
-from utils.epinow2.constants import azure_storage
+from utils.epinow2.constants import azure_storage, modifiable_params
 
 app = typer.Typer()
 console = Console()
@@ -116,6 +116,37 @@ def inspect_task(
                 "[italic red] :triangular_flag: Error instantiating blob client or finding specified resource."
             )
             raise e
+
+@app.command("modify-task")
+def modify_task( job_id: Annotated[
+        str, typer.Option("--job-id", "-j", help="Job ID to list tasks for")
+    ],
+    task_filename: Annotated[
+        str, typer.Option("--task-filename", "-t", help="Task filename to inspect")
+    ]):
+    sp_credential = obtain_sp_credential()
+    full_blob_path = f"{job_id}/{task_filename}"
+    try:
+        blob_client = instantiate_blob_client(
+            sp_credential=sp_credential,
+            account_url=azure_storage["azure_storage_account_url"],
+        )
+        blob_client = blob_client.get_blob_client(
+            container=azure_storage["azure_container_name"], blob=full_blob_path
+        )
+        downloader = blob_client.download_blob(max_concurrency=1, encoding="utf-8")
+        blob_text = downloader.readall()
+        console.print("[bold] :pencil: Modifying task with contents:\n")
+        console.print(json.loads(blob_text))
+        task_key = Prompt.ask(f":key: Which task field would you like to modify?\n Your options are: {modifiable_params}")
+        if task_key not in modifiable_params:
+            console.print("[italic red] :triangular_flag: Invalid task field. Please choose from the following options:")
+            console.print(modifiable_params)
+    except (ResourceNotFoundError, ValueError, ClientAuthenticationError) as e:
+        console.print(
+            "[italic red] :triangular_flag: Error instantiating blob client or finding specified resource."
+        )
+        raise e
 
 
 def main():
