@@ -10,7 +10,7 @@ from utils.azure.auth import obtain_sp_credential
 from utils.azure.storage import (
     get_tasks_for_job_id,
     get_unique_jobs_from_blobs,
-    instantiate_blob_client,
+    instantiate_blob_service_client,
 )
 from utils.epinow2.constants import azure_storage
 
@@ -42,11 +42,11 @@ def list_jobs():
     ):
         sp_credential = obtain_sp_credential()
         try:
-            blob_client = instantiate_blob_client(
+            blob_service_client = instantiate_blob_service_client(
                 sp_credential=sp_credential,
                 account_url=azure_storage["azure_storage_account_url"],
             )
-            container_client = blob_client.get_container_client(container_name)
+            container_client = blob_service_client.get_container_client(container_name)
             blob_list = container_client.list_blobs()
             unique_jobs = get_unique_jobs_from_blobs(blob_list=blob_list)
             console.print(unique_jobs)
@@ -70,11 +70,11 @@ def list_tasks(
     ):
         sp_credential = obtain_sp_credential()
         try:
-            blob_client = instantiate_blob_client(
+            blob_service_client = instantiate_blob_service_client(
                 sp_credential=sp_credential,
                 account_url=azure_storage["azure_storage_account_url"],
             )
-            container_client = blob_client.get_container_client(container_name)
+            container_client = blob_service_client.get_container_client(container_name)
             blob_list = container_client.list_blobs()
             tasks_for_job = get_tasks_for_job_id(blob_list=blob_list, job_id=job_id)
             console.print(tasks_for_job)
@@ -101,11 +101,11 @@ def inspect_task(
         sp_credential = obtain_sp_credential()
         full_blob_path = f"{job_id}/{task_filename}"
         try:
-            blob_client = instantiate_blob_client(
+            blob_service_client = instantiate_blob_service_client(
                 sp_credential=sp_credential,
                 account_url=azure_storage["azure_storage_account_url"],
             )
-            blob_client = blob_client.get_blob_client(
+            blob_client = blob_service_client.get_blob_client(
                 container=azure_storage["azure_container_name"], blob=full_blob_path
             )
             downloader = blob_client.download_blob(max_concurrency=1, encoding="utf-8")

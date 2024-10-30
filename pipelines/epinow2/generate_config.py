@@ -2,7 +2,7 @@ import json
 import logging
 
 from utils.azure.auth import obtain_sp_credential
-from utils.azure.storage import instantiate_blob_client
+from utils.azure.storage import instantiate_blob_service_client
 from utils.epinow2.constants import azure_storage
 from utils.epinow2.functions import (
     extract_user_args,
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     # Push task configs to Azure Blob Storage
     try:
         sp_credential = obtain_sp_credential()
-        storage_client = instantiate_blob_client(
+        storage_client = instantiate_blob_service_client(
             sp_credential=sp_credential,
             account_url=azure_storage["azure_storage_account_url"],
         )
