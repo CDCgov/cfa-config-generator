@@ -52,7 +52,12 @@ def get_tasks_for_job_id(blob_list: list | None = None, job_id: str = "") -> lis
     tasks_for_job = []
     blob_list = blob_list or []
     for blob in blob_list:
-        blob_job_id, blob_task_id = blob.name.split("/")
-        if blob_job_id == job_id:
-            tasks_for_job.append(blob_task_id)
+        try:
+            blob_job_id, blob_task_id = blob.name.split("/")
+            if blob_job_id == job_id:
+                tasks_for_job.append(blob_task_id)
+        except ValueError:
+            raise ValueError(
+                "Blob name does not match expected format. Check that blobs are formatted as <job_id>/<task_id>.json."
+            )
     return sorted(tasks_for_job)
