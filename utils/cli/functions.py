@@ -1,5 +1,5 @@
 from rich.console import Console
-from rich.prompt import FloatPrompt, IntPrompt, Prompt
+from rich.prompt import Confirm, FloatPrompt, IntPrompt, Prompt
 
 
 def update_config(
@@ -24,11 +24,11 @@ def update_config(
         updated_config = {}
 
     for key in keys:
-        to_modify = Prompt.ask(
-            f":key: Would you like to modify [bold green]{key}[/bold green]? (y/n)"
+        to_modify = Confirm.ask(
+            f":key: Would you like to modify [bold green]{key}[/bold green]?"
         )
 
-        if to_modify.lower() == "n":
+        if not to_modify:
             # Keep original value
             updated_config[key] = config.get(key)
         else:
@@ -42,6 +42,14 @@ def update_config(
                 update_config(
                     val_to_modify, val_to_modify.keys(), console, updated_config[key]
                 )
+            elif isinstance(val_to_modify, list):
+                # Handle list inputs (reference_date, report_date, production_date)
+                prompt = get_prompt_from_type(val_to_modify)
+                new_val = prompt.ask(
+                    f":key: Enter new value for {key}; separate by commas for multiple values"
+                )
+                # Sanitize and store input as list
+                updated_config[key] = [x.strip() for x in new_val.split(",")]
             else:
                 prompt = get_prompt_from_type(val_to_modify)
                 new_val = prompt.ask(f":key: Enter new value for {key}")
