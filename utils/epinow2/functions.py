@@ -177,6 +177,24 @@ def generate_task_id(
     return f"{job_id.hex}_{state}_{disease}_{timestamp}"
 
 
+def update_task_id(
+    task_id: str | None = None,
+    timestamp: int | None = None,
+) -> str:
+    """Updates a task_id with new timestamp.
+    Parameters:
+        task_id: task_id to update
+        timestamp: updated timestamp
+    """
+    try:
+        job_id, state, disease, _ = task_id.split("_")
+        return f"{job_id}_{state}_{disease}_{timestamp}"
+    except ValueError:
+        raise ValueError(
+            "Task ID does not match expected format. Check that task IDs are formatted as <job_id>_<state>_<disease>_<timestamp>."
+        )
+
+
 def generate_task_configs(
     state: list | None = None,
     disease: list | None = None,
