@@ -1,7 +1,13 @@
-from rich.prompt import Prompt, IntPrompt, FloatPrompt
 from rich.console import Console
+from rich.prompt import FloatPrompt, IntPrompt, Prompt
 
-def update_config(config: dict | None, keys: list | None, console: Console | None, updated_config: dict | None = None)  -> dict:
+
+def update_config(
+    config: dict | None = None,
+    keys: list | None = None,
+    console: Console | None = None,
+    updated_config: dict | None = None,
+) -> dict:
     """Function that interactively and recursively updates a configuration,
     based on user input.
     Args:
@@ -18,7 +24,9 @@ def update_config(config: dict | None, keys: list | None, console: Console | Non
         updated_config = {}
 
     for key in keys:
-        to_modify = Prompt.ask(f":key: Would you like to modify {key}? (y/n)")
+        to_modify = Prompt.ask(
+            f":key: Would you like to modify [bold green]{key}[/bold green]? (y/n)"
+        )
 
         if to_modify.lower() == "n":
             # Keep original value
@@ -32,10 +40,7 @@ def update_config(config: dict | None, keys: list | None, console: Console | Non
                 # Handle nested dictionary
                 updated_config[key] = {}
                 update_config(
-                    val_to_modify,
-                    val_to_modify.keys(),
-                    console,
-                    updated_config[key]
+                    val_to_modify, val_to_modify.keys(), console, updated_config[key]
                 )
             else:
                 prompt = get_prompt_from_type(val_to_modify)
@@ -44,6 +49,7 @@ def update_config(config: dict | None, keys: list | None, console: Console | Non
                 console.print(f":light_bulb: Updated {key} to: {new_val}")
 
     return updated_config
+
 
 def get_prompt_from_type(val: str = "") -> Prompt:
     """Function to return the correct type of Prompt
