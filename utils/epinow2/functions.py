@@ -187,6 +187,8 @@ def update_task_id(
         timestamp: updated timestamp
     """
     try:
+        # Task id format: <job_id>_<state>_<disease>_<timestamp>
+        # eg bf57b6e297ad11efb20c00155d63cada_WY_Influenza_1730395796
         job_id, state, disease, _ = task_id.split("_")
         return f"{job_id}_{state}_{disease}_{timestamp}"
     except ValueError:
