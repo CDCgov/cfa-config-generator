@@ -49,7 +49,9 @@ def update_config(
                     f":key: Enter new value for {key}; separate by commas for multiple values"
                 )
                 # Sanitize and store input as list
-                updated_config[key] = [x.strip() for x in new_val.split(",")]
+                new_val = [x.strip() for x in new_val.split(",")]
+                updated_config[key] = new_val
+                console.print(f":light_bulb: Updated {key} to: {new_val}")
             else:
                 prompt = get_prompt_from_type(val_to_modify)
                 new_val = prompt.ask(f":key: Enter new value for {key}")
