@@ -1,5 +1,9 @@
+import json
+
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
+
+from utils.epinow2.constants import azure_storage
 
 
 def instantiate_blob_service_client(
@@ -61,3 +65,26 @@ def get_tasks_for_job_id(blob_list: list | None = None, job_id: str = "") -> lis
                 "Blob name does not match expected format. Check that blobs are formatted as <job_id>/<task_id>.json."
             )
     return sorted(tasks_for_job)
+
+
+def download_blob(
+    blob_path: str = "", sp_credential: DefaultAzureCredential | None = None
+) -> dict:
+    """Function to download a blob from Azure Storage and return its contents in JSON format.
+    Args:
+        blob_path (str): Path to the blob to download.
+        sp_credential (DefaultAzureCredential): Service principal credential object
+        for use in authenticating with Storage API.
+    Returns:
+        dict: JSON object representing the contents of the blob.
+    """
+    blob_service_client = instantiate_blob_service_client(
+        sp_credential=sp_credential,
+        account_url=azure_storage["azure_storage_account_url"],
+    )
+    blob_client = blob_service_client.get_blob_client(
+        container=azure_storage["azure_container_name"], blob=blob_path
+    )
+    downloader = blob_client.download_blob(max_concurrency=1, encoding="utf-8")
+    blob_text = downloader.readall()
+    return json.loads(blob_text)

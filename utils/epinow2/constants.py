@@ -79,3 +79,12 @@ azure_storage = {
     "azure_container_name": "rt-epinow2-config",
     "scope_url": "https://cfaazurebatchprd.blob.core.windows.net/.default",
 }
+
+modifiable_params = [
+    "parameters",
+    "data",
+    "seed",
+    "horizon",
+    "priors",
+    "sampler_opts",
+]
