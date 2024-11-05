@@ -37,7 +37,14 @@ def check_login():
 
 
 @app.command("list-jobs")
-def list_jobs():
+def list_jobs(
+    num_jobs: Annotated[
+        int,
+        typer.Option(
+            "--num-jobs", "-n", help="Number of jobs to display (default 10)."
+        ),
+    ] = 10,
+):
     container_name = azure_storage["azure_container_name"]
     with console.status(
         f"Fetching jobs in {container_name} container...\n",
@@ -52,7 +59,7 @@ def list_jobs():
             container_client = blob_service_client.get_container_client(container_name)
             blob_list = container_client.list_blobs()
             unique_jobs = get_unique_jobs_from_blobs(blob_list=blob_list)
-            console.print(unique_jobs)
+            console.print(unique_jobs[0:num_jobs])
         except (ValueError, ResourceNotFoundError, ClientAuthenticationError) as e:
             console.print(
                 "[italic red] :triangular_flag: Error instantiating blob client or finding specified resource."
