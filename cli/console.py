@@ -72,6 +72,24 @@ def list_tasks(
     job_id: Annotated[
         str, typer.Option("--job-id", "-j", help="Job ID to list tasks for")
     ],
+    num_tasks: Annotated[
+        int,
+        typer.Option(
+            "--num-tasks", "-n", help="Number of tasks to display (default 10)."
+        ),
+    ] = 10,
+    state: Annotated[
+        str,
+        typer.Option("--state", "-s", help="State to filter tasks by (default all)."),
+    ] = None,
+    disease: Annotated[
+        str,
+        typer.Option(
+            "--disease",
+            "-d",
+            help="Disease to filter tasks by (default COVID-19, Influenza).",
+        ),
+    ] = None,
 ):
     container_name = azure_storage["azure_container_name"]
     with console.status(
@@ -86,8 +104,10 @@ def list_tasks(
             )
             container_client = blob_service_client.get_container_client(container_name)
             blob_list = container_client.list_blobs()
-            tasks_for_job = get_tasks_for_job_id(blob_list=blob_list, job_id=job_id)
-            console.print(tasks_for_job)
+            tasks_for_job = get_tasks_for_job_id(
+                blob_list=blob_list, job_id=job_id, state=state, disease=disease
+            )
+            console.print(tasks_for_job[0:num_tasks])
         except (ResourceNotFoundError, ValueError, ClientAuthenticationError) as e:
             console.print(
                 "[italic red] :triangular_flag: Error instantiating blob client or finding specified resource."
