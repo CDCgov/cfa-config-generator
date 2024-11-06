@@ -79,11 +79,11 @@ def list_tasks(
         ),
     ] = 10,
     state: Annotated[
-        str,
+        str | None,
         typer.Option("--state", "-s", help="State to filter tasks by (default all)."),
     ] = None,
     disease: Annotated[
-        str,
+        str | None,
         typer.Option(
             "--disease",
             "-d",
