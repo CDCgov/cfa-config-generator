@@ -45,7 +45,12 @@ def get_unique_jobs_from_blobs(blob_list: list | None = None) -> list:
     return sorted(unique_jobs)
 
 
-def get_tasks_for_job_id(blob_list: list | None = None, job_id: str = "") -> list:
+def get_tasks_for_job_id(
+    blob_list: list | None = None,
+    job_id: str = "",
+    state: str | None = None,
+    disease: str | None = None,
+) -> list:
     """Function to extract tasks for a specific job ID from a list of blobs.
     Args:
         blob_list (list): List of blobs from Azure Storage.
@@ -64,6 +69,12 @@ def get_tasks_for_job_id(blob_list: list | None = None, job_id: str = "") -> lis
             raise ValueError(
                 "Blob name does not match expected format. Check that blobs are formatted as <job_id>/<task_id>.json."
             )
+    if state:
+        tasks_for_job = [task for task in tasks_for_job if state in task]
+
+    if disease:
+        tasks_for_job = [task for task in tasks_for_job if disease in task]
+
     return sorted(tasks_for_job)
 
 
