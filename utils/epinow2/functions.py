@@ -236,7 +236,6 @@ def generate_task_configs(
                 "disease": d,
                 "geo_value": [s],
                 "geo_type": "state" if s != "US" else "country",
-                "parameters": shared_params["parameters"],
                 "data": {
                     "path": data_path,
                     "blob_storage_container": data_container,
@@ -244,10 +243,7 @@ def generate_task_configs(
                     "reference_date": [x.isoformat() for x in reference_dates],
                     "production_date": [production_date.isoformat()],
                 },
-                "seed": shared_params["seed"],
-                "horizon": shared_params["horizon"],
-                "priors": shared_params["priors"],
-                "sampler_opts": shared_params["sampler_opts"],
+                **shared_params,
             }
             configs.append(task_config)
     return configs, job_name
