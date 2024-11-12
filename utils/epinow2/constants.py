@@ -91,4 +91,5 @@ modifiable_params = [
     "horizon",
     "priors",
     "sampler_opts",
+    "exclusions",
 ]
