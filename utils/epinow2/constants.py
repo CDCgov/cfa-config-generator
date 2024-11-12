@@ -14,7 +14,8 @@ shared_params = {
     },
     "exclusions": {
         "path": None
-    }
+    },
+    "config_version": "1.0",
 }
 
 all_states = [
