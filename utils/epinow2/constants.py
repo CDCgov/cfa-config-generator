@@ -12,6 +12,9 @@ shared_params = {
         "adapt_delta": 0.99,
         "max_treedepth": 12,
     },
+    "exclusions": {
+        "path": None
+    }
 }
 
 all_states = [
