@@ -3,8 +3,6 @@ description: Run a workload to create a new modeling job and associated task con
 
 on:
   workflow_dispatch:
-    schedule:
-      - cron: '0 9 * * 3'
     inputs:
       state:
         description: 'State to run (default: all)'

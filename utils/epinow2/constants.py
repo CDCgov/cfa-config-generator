@@ -12,6 +12,8 @@ shared_params = {
         "adapt_delta": 0.99,
         "max_treedepth": 12,
     },
+    "exclusions": {"path": None},
+    "config_version": "1.0",
 }
 
 all_states = [
@@ -87,4 +89,5 @@ modifiable_params = [
     "horizon",
     "priors",
     "sampler_opts",
+    "exclusions",
 ]
