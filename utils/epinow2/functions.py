@@ -234,7 +234,7 @@ def generate_task_configs(
                 "task_id": generate_task_id(job_id=job_id, state=s, disease=d),
                 "as_of_date": as_of_date,
                 "disease": d,
-                "geo_value": [s],
+                "geo_value": s,
                 "geo_type": "state" if s != "US" else "country",
                 "data": {
                     "path": data_path,
