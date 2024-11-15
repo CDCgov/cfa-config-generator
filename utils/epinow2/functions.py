@@ -232,7 +232,9 @@ def generate_task_configs(
             task_config = {
                 "job_id": job_name,
                 "task_id": generate_task_id(job_id=job_id, state=s, disease=d),
-                "as_of_date": as_of_date,
+                "as_of_date": date.fromtimestamp(as_of_date).isoformat(),
+                "min_reference_date": min(reference_dates).isoformat(),
+                "max_reference_date": max(reference_dates).isoformat(),
                 "disease": d,
                 "geo_value": s,
                 "geo_type": "state" if s != "US" else "country",

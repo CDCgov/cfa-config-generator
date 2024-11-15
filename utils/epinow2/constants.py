@@ -2,19 +2,10 @@ shared_params = {
     "seed": 42,
     "horizon": 14,
     "priors": {"rt": {"mean": 1.0, "sd": 0.2}, "gp": {"alpha_sd": 0.01}},
-     "parameters": {
-       "generation_interval": {
-         "path": "gold/",
-         "blob_storage_container": None
-       },
-       "delay_interval": {
-         "path": None,
-         "blob_storage_container": None
-       },
-       "right_truncation": {
-         "path": None,
-         "blob_storage_container": None
-       }
+    "parameters": {
+        "generation_interval": {"path": None, "blob_storage_container": None},
+        "delay_interval": {"path": None, "blob_storage_container": None},
+        "right_truncation": {"path": None, "blob_storage_container": None},
     },
     "sampler_opts": {
         "cores": 1,
