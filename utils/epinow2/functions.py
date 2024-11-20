@@ -238,12 +238,11 @@ def generate_task_configs(
                 "disease": d,
                 "geo_value": s,
                 "geo_type": "state" if s != "US" else "country",
+                "report_date": report_date.isoformat(),
+                "production_date": production_date.isoformat(),
                 "data": {
                     "path": data_path,
                     "blob_storage_container": data_container,
-                    "report_date": [report_date.isoformat()],
-                    "reference_date": [x.isoformat() for x in reference_dates],
-                    "production_date": [production_date.isoformat()],
                 },
                 **shared_params,
             }
