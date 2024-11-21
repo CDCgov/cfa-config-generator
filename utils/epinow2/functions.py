@@ -23,7 +23,7 @@ def extract_user_args() -> dict:
     ]
 
     data_source = os.environ.get("data_source") or "nssp"
-    data_path = os.environ.get("data_path") or "gold/"
+    data_path = os.environ.get("data_path") or f"gold/{report_date}.parquet"
     data_container = os.environ.get("data_container") or None
     return {
         "state": state,
