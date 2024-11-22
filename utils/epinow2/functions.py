@@ -73,7 +73,7 @@ def generate_job_name(job_id: UUID | None = None, as_of_date: int | None = None)
         job_id: UUID for job
         as_of_date: timestamp of model run
     """
-    job_name = f"Rt-estimation-{job_id.hex}-{datetime.fromtimestamp(as_of_date).isoformat()}".replace(
+    job_name = f"Rt-estimation-{datetime.fromtimestamp(as_of_date).isoformat()}-{job_id.hex}".replace(
         ":", "-"
     )
     return job_name
