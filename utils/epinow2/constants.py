@@ -2,18 +2,18 @@ shared_params = {
     "seed": 42,
     "horizon": 14,
     "priors": {"rt": {"mean": 1.0, "sd": 0.2}, "gp": {"alpha_sd": 0.01}},
-    "parameters": {
-        "path": "data/parameters.parquet",
-        "blob_storage_container": None,
-    },
     "sampler_opts": {
-        "cores": 4,
-        "chains": 4,
+        "cores": 1,
+        "chains": 1,
+        "iter_warmup": 50,
+        "iter_sampling": 50,
         "adapt_delta": 0.99,
         "max_treedepth": 12,
     },
     "exclusions": {"path": None},
     "config_version": "1.0",
+    "quantile_width": [0.5, 0.95],
+    "model": "EpiNow2",
 }
 
 all_states = [
@@ -90,4 +90,6 @@ modifiable_params = [
     "priors",
     "sampler_opts",
     "exclusions",
+    "quantile_width",
+    "model",
 ]

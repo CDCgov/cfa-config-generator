@@ -19,7 +19,7 @@ def test_extract_user_args():
         "production_date": date.today(),
         "reference_dates": [min_reference_date, max_reference_date],
         "data_source": "nssp",
-        "data_path": "gold/",
+        "data_path": f"gold/{report_date}.parquet",
         "data_container": None,
     }
 
@@ -39,7 +39,7 @@ def test_validate_args_default():
         "production_date": date.today(),
         "reference_dates": [min_reference_date, max_reference_date],
         "data_source": "nssp",
-        "data_path": "gold/",
+        "data_path": f"gold/{report_date}.parquet",
         "data_container": None,
     }
 
@@ -49,7 +49,7 @@ def test_validate_args_default():
         "disease": all_diseases,
         "reference_dates": [min_reference_date, max_reference_date],
         "report_date": report_date,
-        "data_path": "gold/",
+        "data_path": f"gold/{report_date}.parquet",
         "data_container": None,
         "production_date": date.today(),
     }

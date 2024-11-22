@@ -23,7 +23,7 @@ def extract_user_args() -> dict:
     ]
 
     data_source = os.environ.get("data_source") or "nssp"
-    data_path = os.environ.get("data_path") or "gold/"
+    data_path = os.environ.get("data_path") or f"gold/{report_date}.parquet"
     data_container = os.environ.get("data_container") or None
     return {
         "state": state,
@@ -232,16 +232,25 @@ def generate_task_configs(
             task_config = {
                 "job_id": job_name,
                 "task_id": generate_task_id(job_id=job_id, state=s, disease=d),
-                "as_of_date": as_of_date,
+                "min_reference_date": min(reference_dates).isoformat(),
+                "max_reference_date": max(reference_dates).isoformat(),
                 "disease": d,
-                "geo_value": [s],
+                "geo_value": s,
                 "geo_type": "state" if s != "US" else "country",
+                "report_date": report_date.isoformat(),
+                "production_date": production_date.isoformat(),
+                "parameters": {
+                    "as_of_date": date.fromtimestamp(as_of_date).isoformat(),
+                    "generation_interval": {
+                        "path": None,
+                        "blob_storage_container": None,
+                    },
+                    "delay_interval": {"path": None, "blob_storage_container": None},
+                    "right_truncation": {"path": None, "blob_storage_container": None},
+                },
                 "data": {
                     "path": data_path,
                     "blob_storage_container": data_container,
-                    "report_date": [report_date.isoformat()],
-                    "reference_date": [x.isoformat() for x in reference_dates],
-                    "production_date": [production_date.isoformat()],
                 },
                 **shared_params,
             }
