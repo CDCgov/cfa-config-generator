@@ -20,7 +20,7 @@ def test_extract_user_args():
         "reference_dates": [min_reference_date, max_reference_date],
         "data_source": "nssp",
         "data_path": f"gold/{report_date}.parquet",
-        "data_container": None,
+        "data_container": "nssp-etl",
     }
 
     assert extract_user_args() == default_args
