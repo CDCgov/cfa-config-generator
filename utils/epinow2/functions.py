@@ -24,7 +24,7 @@ def extract_user_args() -> dict:
 
     data_source = os.environ.get("data_source") or "nssp"
     data_path = os.environ.get("data_path") or f"gold/{report_date}.parquet"
-    data_container = os.environ.get("data_container") or None
+    data_container = os.environ.get("data_container") or "nssp-etl"
     return {
         "state": state,
         "disease": disease,
@@ -242,11 +242,17 @@ def generate_task_configs(
                 "parameters": {
                     "as_of_date": date.fromtimestamp(as_of_date).isoformat(),
                     "generation_interval": {
-                        "path": None,
-                        "blob_storage_container": None,
+                        "path": "prod.parquet",
+                        "blob_storage_container": "prod-param-estimates",
                     },
-                    "delay_interval": {"path": None, "blob_storage_container": None},
-                    "right_truncation": {"path": None, "blob_storage_container": None},
+                    "delay_interval": {
+                        "path": "prod.parquet",
+                        "blob_storage_container": "prod-param-estimates",
+                    },
+                    "right_truncation": {
+                        "path": "prod.parquet",
+                        "blob_storage_container": "prod-param-estimates",
+                    },
                 },
                 "data": {
                     "path": data_path,
