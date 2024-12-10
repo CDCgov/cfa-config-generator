@@ -6,7 +6,7 @@ shared_params = {
         "cores": 4,
         "chains": 4,
         "iter_warmup": 5000,
-        "iter_sampling": 10000, # 2500 x 4 chains
+        "iter_sampling": 10000,  # 2500 x 4 chains
         "adapt_delta": 0.99,
         "max_treedepth": 12,
     },
