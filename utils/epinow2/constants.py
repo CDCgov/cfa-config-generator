@@ -5,8 +5,8 @@ shared_params = {
     "sampler_opts": {
         "cores": 4,
         "chains": 4,
-        "iter_warmup": 2500,
-        "iter_sampling": 2500,
+        "iter_warmup": 5000,
+        "iter_sampling": 10000,  # 2500 x 4 chains
         "adapt_delta": 0.99,
         "max_treedepth": 12,
     },
