@@ -39,7 +39,7 @@ def extract_user_args() -> dict:
 
 def generate_timestamp() -> int:
     """Generates a timestamp of the current time using UTC timezone."""
-    return int(datetime.timestamp(datetime.now(timezone.utc)))
+    return datetime.timestamp(datetime.now(timezone.utc)).isoformat()
 
 
 def get_reference_date_range(report_date: date) -> tuple[date, date]:
@@ -174,7 +174,7 @@ def generate_task_id(
         disease: disease being run
     """
     timestamp = generate_timestamp()
-    return f"{job_id.hex}_{state}_{disease}_{timestamp}"
+    return f"{state}_{disease}_{timestamp}_{job_id.hex}"
 
 
 def update_task_id(
