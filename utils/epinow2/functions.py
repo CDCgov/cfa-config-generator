@@ -39,7 +39,7 @@ def extract_user_args() -> dict:
 
 def generate_timestamp() -> int:
     """Generates a timestamp of the current time using UTC timezone."""
-    return datetime.timestamp(datetime.now(timezone.utc)).isoformat()
+    return datetime.now(timezone.utc).isoformat()
 
 
 def get_reference_date_range(report_date: date) -> tuple[date, date]:
