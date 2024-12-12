@@ -51,7 +51,7 @@ if __name__ == "__main__":
         for task in task_configs:
             blob_name = f"{job_name}/{task['task_id']}.json"
             container_client.upload_blob(
-                name=blob_name, data=json.dumps(task), overwrite=True
+                name=blob_name, data=json.dumps(task, indent=2), overwrite=True
             )
     except (LookupError, ValueError) as e:
         logger.error(f"Error pushing to Azure: {e}")
