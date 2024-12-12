@@ -37,8 +37,8 @@ def extract_user_args() -> dict:
     }
 
 
-def generate_timestamp() -> int:
-    """Generates a timestamp of the current time using UTC timezone."""
+def generate_timestamp() -> str:
+    """Generates an iso format string of the current time using UTC timezone."""
     return datetime.now(timezone.utc).isoformat()
 
 
@@ -67,15 +67,13 @@ def generate_uuid() -> UUID:
     return uuid1()
 
 
-def generate_job_name(job_id: UUID | None = None, as_of_date: int | None = None) -> str:
+def generate_job_name(job_id: UUID | None = None, as_of_date: str | None = None) -> str:
     """Generate a human-readable slug based on job UUID and as_of_date.
     Parameters:
         job_id: UUID for job
-        as_of_date: timestamp of model run
+        as_of_date: iso format timestamp of model run
     """
-    job_name = f"Rt-estimation-{datetime.fromtimestamp(as_of_date).isoformat()}-{job_id.hex}".replace(
-        ":", "-"
-    )
+    job_name = f"Rt-estimation-{as_of_date}-{job_id.hex}".replace(":", "-")
     return job_name
 
 
@@ -204,7 +202,7 @@ def generate_task_configs(
     reference_dates: list[date] | None = None,
     data_container: str | None = None,
     data_path: str | None = None,
-    as_of_date: int | None = None,
+    as_of_date: str | None = None,
     job_id: UUID | None = None,
     production_date: date | None = None,
 ) -> tuple[list[dict], str]:
@@ -216,7 +214,7 @@ def generate_task_configs(
         disease: pathogen to run
         report_date: date of model run
         reference_dates: array of reference (event) dates
-        as_of_date: timestamp of model run
+        as_of_date: iso format datetime string of model run
         job_id: UUID for job
         data_container: container for input data
         data_path: path to input data
@@ -240,7 +238,7 @@ def generate_task_configs(
                 "report_date": report_date.isoformat(),
                 "production_date": production_date.isoformat(),
                 "parameters": {
-                    "as_of_date": date.fromtimestamp(as_of_date).isoformat(),
+                    "as_of_date": as_of_date,
                     "generation_interval": {
                         "path": "prod.parquet",
                         "blob_storage_container": "prod-param-estimates",
