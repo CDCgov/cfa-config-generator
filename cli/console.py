@@ -187,7 +187,9 @@ def modify_task(
                     container=azure_storage["azure_container_name"]
                 )
                 container_client.upload_blob(
-                    name=task_path, data=json.dumps(full_config), overwrite=True
+                    name=task_path,
+                    data=json.dumps(full_config, indent=2),
+                    overwrite=True,
                 )
                 console.print(
                     f"[italic green] :sparkles: Task successfully pushed to Azure at {task_path}."
