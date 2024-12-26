@@ -232,8 +232,8 @@ def bulk_update(
                 )
                 blob_list = container_client.list_blobs()
                 tasks_for_job = get_tasks_for_job_id(blob_list=blob_list, job_id=job_id)
-                for task_path in tasks_for_job:
-                    full_blob_path = f"{job_id}/{task_path}"
+                for task_filename in tasks_for_job:
+                    full_blob_path = f"{job_id}/{task_filename}"
                     blob_data = download_blob(
                         blob_path=full_blob_path, sp_credential=sp_credential
                     )
