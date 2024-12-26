@@ -175,7 +175,7 @@ def modify_task(
             ):
                 # Update timestamps and push to Azure
                 timestamp = generate_timestamp()
-                full_config["as_of_date"] = timestamp
+                full_config["parameters"]["as_of_date"] = timestamp
                 updated_task_id = update_task_id(full_config["task_id"], timestamp)
                 task_path = f"{job_id}/{updated_task_id}.json"
                 storage_client = instantiate_blob_service_client(
@@ -241,7 +241,7 @@ def bulk_update(
 
                     # Update timestamps and push to Azure
                     timestamp = generate_timestamp()
-                    updated_config["as_of_date"] = timestamp
+                    updated_config["parameters"]["as_of_date"] = timestamp
                     updated_task_id = update_task_id(
                         updated_config["task_id"], timestamp
                     )
