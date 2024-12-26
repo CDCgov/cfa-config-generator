@@ -118,7 +118,7 @@ def list_tasks(
 @app.command("inspect-task")
 def inspect_task(
     job_id: Annotated[
-        str, typer.Option("--job-id", "-j", help="Job ID to list tasks for")
+        str, typer.Option("--job-id", "-j", help="Job ID of task")
     ],
     task_filename: Annotated[
         str, typer.Option("--task-filename", "-t", help="Task filename to inspect")
@@ -146,10 +146,10 @@ def inspect_task(
 @app.command("modify-task")
 def modify_task(
     job_id: Annotated[
-        str, typer.Option("--job-id", "-j", help="Job ID to list tasks for")
+        str, typer.Option("--job-id", "-j", help="Job ID of task")
     ],
     task_filename: Annotated[
-        str, typer.Option("--task-filename", "-t", help="Task filename to inspect")
+        str, typer.Option("--task-filename", "-t", help="Task filename to modify")
     ],
 ):
     sp_credential = obtain_sp_credential()
@@ -203,6 +203,11 @@ def modify_task(
         )
         raise e
 
+@app.command("bulk-update")
+def bulk_update(
+    job_id: Annotated[str, typer.Option("--job-id", "-j", help="Job ID to update tasks for")]
+):
+    console.print(f"[bold red] :loudspeaker: This command will modify all tasks for {job_id}. Proceed with caution.")
 
 def main():
     app()
