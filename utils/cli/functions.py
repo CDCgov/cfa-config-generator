@@ -101,13 +101,13 @@ def update_config_bulk(
                     val_to_modify, val_to_modify.keys(), console, updated_config[key]
                 )
             elif isinstance(val_to_modify, list):
-                # Handle list inputs (reference_date, report_date, production_date)
+                # Handle list inputs (quantile_width)
                 prompt = get_prompt_from_type(val_to_modify)
                 new_val = prompt.ask(
                     f":key: Enter new value for {key}; separate by commas for multiple values"
                 )
                 # Sanitize and store input as list
-                new_val = [x.strip() for x in new_val.split(",")]
+                new_val = [float(x.strip()) for x in new_val.split(",")]
                 updated_config[key] = new_val
                 console.print(f":light_bulb: Updated {key} to: {new_val}")
             else:
