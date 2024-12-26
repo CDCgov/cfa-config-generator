@@ -13,8 +13,11 @@ from utils.azure.storage import (
     get_unique_jobs_from_blobs,
     instantiate_blob_service_client,
 )
-from utils.cli.functions import update_config
-from utils.epinow2.constants import azure_storage, modifiable_params
+from utils.cli.functions import (
+    update_config,
+    update_config_bulk,
+)
+from utils.epinow2.constants import azure_storage, modifiable_params, sample_task
 from utils.epinow2.functions import generate_timestamp, update_task_id
 
 app = typer.Typer()
@@ -117,9 +120,7 @@ def list_tasks(
 
 @app.command("inspect-task")
 def inspect_task(
-    job_id: Annotated[
-        str, typer.Option("--job-id", "-j", help="Job ID to list tasks for")
-    ],
+    job_id: Annotated[str, typer.Option("--job-id", "-j", help="Job ID of task")],
     task_filename: Annotated[
         str, typer.Option("--task-filename", "-t", help="Task filename to inspect")
     ],
@@ -145,11 +146,9 @@ def inspect_task(
 
 @app.command("modify-task")
 def modify_task(
-    job_id: Annotated[
-        str, typer.Option("--job-id", "-j", help="Job ID to list tasks for")
-    ],
+    job_id: Annotated[str, typer.Option("--job-id", "-j", help="Job ID of task")],
     task_filename: Annotated[
-        str, typer.Option("--task-filename", "-t", help="Task filename to inspect")
+        str, typer.Option("--task-filename", "-t", help="Task filename to modify")
     ],
 ):
     sp_credential = obtain_sp_credential()
@@ -176,7 +175,7 @@ def modify_task(
             ):
                 # Update timestamps and push to Azure
                 timestamp = generate_timestamp()
-                full_config["as_of_date"] = timestamp
+                full_config["parameters"]["as_of_date"] = timestamp
                 updated_task_id = update_task_id(full_config["task_id"], timestamp)
                 task_path = f"{job_id}/{updated_task_id}.json"
                 storage_client = instantiate_blob_service_client(
@@ -197,6 +196,66 @@ def modify_task(
         else:
             console.print("No changes made to task configuration. Exiting.\n")
 
+    except (ResourceNotFoundError, ValueError, ClientAuthenticationError) as e:
+        console.print(
+            "[italic red] :triangular_flag: Error instantiating blob client or finding specified resource."
+        )
+        raise e
+
+
+@app.command("bulk-update")
+def bulk_update(
+    job_id: Annotated[
+        str, typer.Option("--job-id", "-j", help="Job ID to update tasks for")
+    ],
+):
+    console.print(
+        f"[bold red] :loudspeaker: This command will modify all tasks for {job_id}. Proceed with caution."
+    )
+    sp_credential = obtain_sp_credential()
+    container_name = azure_storage["azure_container_name"]
+    try:
+        bulk_updates = update_config_bulk(sample_task, modifiable_params, console)
+        if bulk_updates:
+            # If there are updates, download all of the existing tasks for the job,
+            # update the fields, and generate new tasks with updated timestamps
+            with console.status(
+                ":cloud: Task configuration updated successfully, pushing to Azure...\n",
+                spinner="aesthetic",
+            ):
+                blob_service_client = instantiate_blob_service_client(
+                    sp_credential=sp_credential,
+                    account_url=azure_storage["azure_storage_account_url"],
+                )
+                container_client = blob_service_client.get_container_client(
+                    container_name
+                )
+                blob_list = container_client.list_blobs()
+                tasks_for_job = get_tasks_for_job_id(blob_list=blob_list, job_id=job_id)
+                for task_filename in tasks_for_job:
+                    full_blob_path = f"{job_id}/{task_filename}"
+                    blob_data = download_blob(
+                        blob_path=full_blob_path, sp_credential=sp_credential
+                    )
+                    updated_config = dict(blob_data, **bulk_updates)
+
+                    # Update timestamps and push to Azure
+                    timestamp = generate_timestamp()
+                    updated_config["parameters"]["as_of_date"] = timestamp
+                    updated_task_id = update_task_id(
+                        updated_config["task_id"], timestamp
+                    )
+                    task_path = f"{job_id}/{updated_task_id}.json"
+                    container_client.upload_blob(
+                        name=task_path,
+                        data=json.dumps(updated_config, indent=2),
+                        overwrite=True,
+                    )
+            console.print(
+                f"[italic green] :sparkles: Tasks successfully updated and pushed to Azure at {job_id}."
+            )
+        else:
+            console.print("No changes made to task configuration. Exiting.\n")
     except (ResourceNotFoundError, ValueError, ClientAuthenticationError) as e:
         console.print(
             "[italic red] :triangular_flag: Error instantiating blob client or finding specified resource."
