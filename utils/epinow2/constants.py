@@ -93,3 +93,49 @@ modifiable_params = [
     "quantile_width",
     "model",
 ]
+
+sample_task = {
+    "job_id": "sample-job-id",
+    "task_id": "sample-task-id",
+    "min_reference_date": "2024-10-22",
+    "max_reference_date": "2024-12-16",
+    "disease": "COVID-19",
+    "geo_value": "AK",
+    "geo_type": "state",
+    "report_date": "2024-12-17",
+    "production_date": "2024-12-17",
+    "parameters": {
+        "as_of_date": "2024-12-17T19:50:06.000814+00:00",
+        "generation_interval": {
+            "path": "prod.parquet",
+            "blob_storage_container": "prod-param-estimates",
+        },
+        "delay_interval": {
+            "path": "prod.parquet",
+            "blob_storage_container": "prod-param-estimates",
+        },
+        "right_truncation": {
+            "path": "prod.parquet",
+            "blob_storage_container": "prod-param-estimates",
+        },
+    },
+    "data": {
+        "path": "gold/2024-12-17.parquet",
+        "blob_storage_container": "nssp-etl",
+    },
+    "seed": 42,
+    "horizon": 14,
+    "priors": {"rt": {"mean": 1.0, "sd": 0.2}, "gp": {"alpha_sd": 0.01}},
+    "sampler_opts": {
+        "cores": 4,
+        "chains": 4,
+        "iter_warmup": 5000,
+        "iter_sampling": 10000,
+        "adapt_delta": 0.99,
+        "max_treedepth": 12,
+    },
+    "exclusions": {"path": None},
+    "config_version": "1.0",
+    "quantile_width": [0.5, 0.95],
+    "model": "EpiNow2",
+}
