@@ -215,18 +215,45 @@ def bulk_update(
     sp_credential = obtain_sp_credential()
     container_name = azure_storage["azure_container_name"]
     try:
-        updated_config = update_config_bulk(sample_task, modifiable_params, console)
-        if updated_config:
+        bulk_updates = update_config_bulk(sample_task, modifiable_params, console)
+        if bulk_updates:
             # If there are updates, download all of the existing tasks for the job,
             # update the fields, and generate new tasks with updated timestamps
-            blob_service_client = instantiate_blob_service_client(
-                sp_credential=sp_credential,
-                account_url=azure_storage["azure_storage_account_url"],
+            with console.status(
+                ":cloud: Task configuration updated successfully, pushing to Azure...\n",
+                spinner="aesthetic",
+            ):
+                blob_service_client = instantiate_blob_service_client(
+                    sp_credential=sp_credential,
+                    account_url=azure_storage["azure_storage_account_url"],
+                )
+                container_client = blob_service_client.get_container_client(
+                    container_name
+                )
+                blob_list = container_client.list_blobs()
+                tasks_for_job = get_tasks_for_job_id(blob_list=blob_list, job_id=job_id)
+                for task_path in tasks_for_job[0:10]:
+                    full_blob_path = f"{job_id}/{task_path}"
+                    blob_data = download_blob(
+                        blob_path=full_blob_path, sp_credential=sp_credential
+                    )
+                    updated_config = dict(blob_data, **bulk_updates)
+
+                    # Update timestamps and push to Azure
+                    timestamp = generate_timestamp()
+                    updated_config["as_of_date"] = timestamp
+                    updated_task_id = update_task_id(
+                        updated_config["task_id"], timestamp
+                    )
+                    task_path = f"{job_id}/{updated_task_id}.json"
+                    container_client.upload_blob(
+                        name=task_path,
+                        data=json.dumps(updated_config, indent=2),
+                        overwrite=True,
+                    )
+            console.print(
+                f"[italic green] :sparkles: Tasks successfully updated and pushed to Azure at {job_id}."
             )
-            container_client = blob_service_client.get_container_client(container_name)
-            blob_list = container_client.list_blobs()
-            tasks_for_job = get_tasks_for_job_id(blob_list=blob_list, job_id=job_id)
-            print(tasks_for_job)
         else:
             console.print("No changes made to task configuration. Exiting.\n")
     except (ResourceNotFoundError, ValueError, ClientAuthenticationError) as e:
