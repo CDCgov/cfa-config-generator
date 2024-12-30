@@ -20,6 +20,8 @@ on:
         description: 'Data path (default: None)'
       production_date:
         description: 'Production date (default: today; format: YYYY-MM-DD)'
+      job_id:
+        description: 'Job ID (default: Rt-estimation-<timestamp>-<uuid>)'
 
 jobs:
   run-workload:
@@ -62,4 +64,5 @@ jobs:
           data_path=${{ inputs.data_path }} \
           data_container=${{ inputs.data_container }} \
           production_date=${{ inputs.production_date }} \
+          job_id=${{ inputs.job_id }} \
             poetry run python pipelines/epinow2/generate_config.py
