@@ -10,21 +10,25 @@ from utils.epinow2.constants import (
 )
 
 
-def extract_user_args() -> dict:
-    """Extracts user-provided arguments from environment variables or uses default if none provided."""
-    state = os.environ.get("state") or "all"
-    disease = os.environ.get("disease") or "all"
-    report_date = os.environ.get("report_date") or date.today()
-    production_date = os.environ.get("production_date") or date.today()
+def extract_user_args(as_of_date: str) -> dict:
+    """Extracts user-provided arguments from environment variables or uses default if none provided.
+    Parameters:
+        as_of_date: iso format timestamp of model run
+    """
+    state = os.getenv("state") or "all"
+    disease = os.getenv("disease") or "all"
+    report_date = os.getenv("report_date") or date.today()
+    production_date = os.getenv("production_date") or date.today()
     min_reference_date, max_reference_date = get_reference_date_range(report_date)
-    reference_dates = os.environ.get("reference_dates") or [
+    reference_dates = os.getenv("reference_dates") or [
         min_reference_date,
         max_reference_date,
     ]
 
-    data_source = os.environ.get("data_source") or "nssp"
-    data_path = os.environ.get("data_path") or f"gold/{report_date}.parquet"
-    data_container = os.environ.get("data_container") or "nssp-etl"
+    data_source = os.getenv("data_source") or "nssp"
+    data_path = os.getenv("data_path") or f"gold/{report_date}.parquet"
+    data_container = os.getenv("data_container") or "nssp-etl"
+    job_id = os.getenv("job_id") or generate_default_job_id(as_of_date=as_of_date)
     return {
         "state": state,
         "disease": disease,
@@ -34,6 +38,8 @@ def extract_user_args() -> dict:
         "data_path": data_path,
         "data_container": data_container,
         "production_date": production_date,
+        "job_id": job_id,
+        "as_of_date": as_of_date,
     }
 
 
@@ -67,14 +73,15 @@ def generate_uuid() -> UUID:
     return uuid1()
 
 
-def generate_job_name(job_id: UUID | None = None, as_of_date: str | None = None) -> str:
-    """Generate a human-readable slug based on job UUID and as_of_date.
+def generate_default_job_id(as_of_date: str | None = None) -> str:
+    """Generate a human-readable slug based on job UUID and as_of_date,
+    if no job_id is supplied by user.
     Parameters:
-        job_id: UUID for job
         as_of_date: iso format timestamp of model run
     """
-    job_name = f"Rt-estimation-{as_of_date}-{job_id.hex}".replace(":", "-")
-    return job_name
+    job_uuid = generate_uuid()
+    job_id = f"Rt-estimation-{as_of_date}-{job_uuid.hex}".replace(":", "-")
+    return job_id
 
 
 def validate_args(
@@ -86,6 +93,8 @@ def validate_args(
     data_path: str | None = None,
     data_container: str | None = None,
     production_date: date | None = None,
+    job_id: str | None = None,
+    as_of_date: str | None = None,
 ) -> dict:
     """Checks that user-supplied arguments are valid and returns them
     in a standardized format for downstream use.
@@ -98,6 +107,8 @@ def validate_args(
         data_container: container for input data
         data_path: path to input data
         production_date: production date of model run
+        job_id: unique identifier for job
+        as_of_date: iso format timestamp of model run
     Returns:
         A dictionary of sanitized arguments.
     """
@@ -155,11 +166,12 @@ def validate_args(
     args_dict["data_path"] = data_path
     args_dict["data_container"] = data_container
     args_dict["production_date"] = production_date
+    args_dict["job_id"] = job_id
+    args_dict["as_of_date"] = as_of_date
     return args_dict
 
 
 def generate_task_id(
-    job_id: UUID | None = None,
     state: str | None = None,
     disease: str | None = None,
 ) -> str:
@@ -167,12 +179,11 @@ def generate_task_id(
     and information on the state and pathogen. Also timestamps the task
     in case they are updated at different times.
     Parameters:
-        job_id: UUID of job
         state: state being run
         disease: disease being run
     """
     timestamp = generate_timestamp()
-    return f"{state}_{disease}_{timestamp}_{job_id.hex}"
+    return f"{state}_{disease}_{timestamp}"
 
 
 def update_task_id(
@@ -185,10 +196,10 @@ def update_task_id(
         timestamp: updated timestamp
     """
     try:
-        # Task id format: <state>_<disease>_<timestamp>_<job_id>
-        # eg WY_Influenza_1730395796_bf57b6e297ad11efb20c00155d63cada
-        state, disease, _, job_id = task_id.split("_")
-        return f"{state}_{disease}_{timestamp}_{job_id}"
+        # Task id format: <state>_<disease>_<timestamp>
+        # eg WY_Influenza_1730395796
+        state, disease, _ = task_id.split("_")
+        return f"{state}_{disease}_{timestamp}"
     except ValueError:
         raise ValueError(
             "Task ID does not match expected format. Check that task IDs are formatted as <job_id>_<state>_<disease>_<timestamp>."
@@ -203,8 +214,8 @@ def generate_task_configs(
     data_container: str | None = None,
     data_path: str | None = None,
     as_of_date: str | None = None,
-    job_id: UUID | None = None,
     production_date: date | None = None,
+    job_id: str | None = None,
 ) -> tuple[list[dict], str]:
     """
     Generates a list of configuration objects based on
@@ -215,21 +226,20 @@ def generate_task_configs(
         report_date: date of model run
         reference_dates: array of reference (event) dates
         as_of_date: iso format datetime string of model run
-        job_id: UUID for job
         data_container: container for input data
         data_path: path to input data
         production_date: production date of model run
+        job_id: unique identifier for job
     Returns:
         A list of configuration objects.
     """
     configs = []
     # Create tasks for each state-pathogen combination
-    job_name = generate_job_name(job_id=job_id, as_of_date=as_of_date)
     for s in state:
         for d in disease:
             task_config = {
-                "job_id": job_name,
-                "task_id": generate_task_id(job_id=job_id, state=s, disease=d),
+                "job_id": job_id,
+                "task_id": generate_task_id(state=s, disease=d),
                 "min_reference_date": min(reference_dates).isoformat(),
                 "max_reference_date": max(reference_dates).isoformat(),
                 "disease": d,
@@ -259,4 +269,4 @@ def generate_task_configs(
                 **shared_params,
             }
             configs.append(task_config)
-    return configs, job_name
+    return configs, job_id

@@ -8,7 +8,6 @@ from utils.epinow2.functions import (
     extract_user_args,
     generate_task_configs,
     generate_timestamp,
-    generate_uuid,
     validate_args,
 )
 
@@ -25,18 +24,17 @@ if __name__ == "__main__":
     writes them to Blob Storage.
     """
 
+    # Generate job-specific parameters
+    as_of_date = generate_timestamp()
+
     # Pull run parameters from environment
-    user_args = extract_user_args()
+    user_args = extract_user_args(as_of_date=as_of_date)
 
     # Validate and sanitize args
     sanitized_args = validate_args(**user_args)
-    # Generate job-specific parameters
-    as_of_date = generate_timestamp()
-    job_id = generate_uuid()
+
     # Generate task-specific configs
-    task_configs, job_name = generate_task_configs(
-        **sanitized_args, as_of_date=as_of_date, job_id=job_id
-    )
+    task_configs, job_id = generate_task_configs(**sanitized_args)
 
     # Push task configs to Azure Blob Storage
     try:
@@ -49,7 +47,7 @@ if __name__ == "__main__":
             container=azure_storage["azure_container_name"]
         )
         for task in task_configs:
-            blob_name = f"{job_name}/{task['task_id']}.json"
+            blob_name = f"{job_id}/{task['task_id']}.json"
             container_client.upload_blob(
                 name=blob_name, data=json.dumps(task, indent=2), overwrite=True
             )
@@ -58,5 +56,5 @@ if __name__ == "__main__":
         raise e
 
     logger.info(
-        f"Successfully generated configs for job: {job_id}. Tasks stored in {job_name} directory"
+        f"Successfully generated configs for job; tasks stored in {job_id} directory."
     )
