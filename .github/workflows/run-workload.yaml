@@ -48,7 +48,7 @@ jobs:
       - name: Azure Service Principal CLI login
         uses: azure/login@v2
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          creds: ${{ secrets.EDAV_CFA_PREDICT_NNHT_SP }}
 
       - name: set pythonpath
         run: |
