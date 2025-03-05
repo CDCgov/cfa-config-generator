@@ -1,3 +1,4 @@
+import ast
 import os
 from datetime import date, datetime, timedelta, timezone
 from uuid import UUID, uuid1
@@ -15,6 +16,7 @@ def extract_user_args(as_of_date: str) -> dict:
     Parameters:
         as_of_date: iso format timestamp of model run
     """
+    task_exclusions = os.getenv("task_exclusions") or None
     state = os.getenv("state") or "all"
     disease = os.getenv("disease") or "all"
     report_date = os.getenv("report_date") or date.today()
@@ -30,6 +32,7 @@ def extract_user_args(as_of_date: str) -> dict:
     data_container = os.getenv("data_container") or "nssp-etl"
     job_id = os.getenv("job_id") or generate_default_job_id(as_of_date=as_of_date)
     return {
+        "task_exclusions": task_exclusions,
         "state": state,
         "disease": disease,
         "report_date": report_date,
@@ -85,6 +88,7 @@ def generate_default_job_id(as_of_date: str | None = None) -> str:
 
 
 def validate_args(
+    task_exclusions: str | None = None,
     state: str | None = None,
     disease: str | None = None,
     report_date: date | None = None,
@@ -99,6 +103,7 @@ def validate_args(
     """Checks that user-supplied arguments are valid and returns them
     in a standardized format for downstream use.
     Parameters:
+        task_exclusions: state:disease pair to exclude from model run
         state: geography to run model
         disease: disease to run
         report_date: date of model run
@@ -113,6 +118,17 @@ def validate_args(
         A dictionary of sanitized arguments.
     """
     args_dict = {}
+    # Split up input string of task_exclusions and validate
+    if task_exclusions is not None:
+        task_pairs = task_exclusions.split(",")
+        state_excl = [item.split(":")[0] for item in task_pairs]
+        disease_excl = [item.split(":")[1] for item in task_pairs]
+        for ind_state in state_excl:
+            if ind_state not in all_states:
+                raise ValueError(f"State {ind_state} not recognized.")
+        for ind_disease in disease_excl:    
+            if ind_disease not in all_diseases:
+                raise ValueError(f"Disease {ind_disease} not recognized. Valid options are 'COVID-19' or 'Influenza'")
     if state == "all":
         if data_source == "nssp":
             args_dict["state"] = list(set(all_states) - set(nssp_states_omit))
@@ -207,6 +223,7 @@ def update_task_id(
 
 
 def generate_task_configs(
+    task_exclusions: list | None = None,
     state: list | None = None,
     disease: list | None = None,
     report_date: date | None = None,
@@ -221,6 +238,7 @@ def generate_task_configs(
     Generates a list of configuration objects based on
     supplied parameters.
     Parameters:
+        task_exclusions: state:disease to exclude
         state: geography to run model
         disease: pathogen to run
         report_date: date of model run
@@ -270,3 +288,28 @@ def generate_task_configs(
             }
             configs.append(task_config)
     return configs, job_id
+
+def exclude_data(data, filters):
+    """
+    Excludes a list of dictionaries based on multiple key-value pairs.
+
+    Args:
+        data: A list of dictionaries.
+        filters: A dictionary where keys are the keys to filter on, 
+                 and values are the values to match. This dictionary
+                 should hold a "geo_value" and "disease"; ex. 
+                 {"geo_value": "NY", "disease": "COVID-19"}
+
+    Returns:
+        A new list containing the dictionaries that do not match all filter criteria.
+    """
+    filtered_data = []
+    for item in data:
+        match = True
+        for key, value in filters.items():
+            if item.get(key) != value:
+                match = False
+                break
+        if not match:
+            filtered_data.append(item)
+    return filtered_data
