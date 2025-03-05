@@ -129,6 +129,7 @@ def validate_args(
         for ind_disease in disease_excl:    
             if ind_disease not in all_diseases:
                 raise ValueError(f"Disease {ind_disease} not recognized. Valid options are 'COVID-19' or 'Influenza'")
+        args_dict["task_exclusions"] = {"geo_value": state_excl, "disease" : disease_excl}
     if state == "all":
         if data_source == "nssp":
             args_dict["state"] = list(set(all_states) - set(nssp_states_omit))
@@ -287,9 +288,13 @@ def generate_task_configs(
                 **shared_params,
             }
             configs.append(task_config)
+
+    if task_exclusions is not None:
+        configs = exclude_data(configs, sanitized_args['task_exclusions'])
+
     return configs, job_id
 
-def exclude_data(data, filters):
+def exclude_data(config_data, filters):
     """
     Excludes a list of dictionaries based on multiple key-value pairs.
 
@@ -304,12 +309,8 @@ def exclude_data(data, filters):
         A new list containing the dictionaries that do not match all filter criteria.
     """
     filtered_data = []
-    for item in data:
-        match = True
-        for key, value in filters.items():
-            if item.get(key) != value:
-                match = False
-                break
-        if not match:
-            filtered_data.append(item)
+    for config in config_data:
+        if not (config['geo_value'] in filters['geo_value'] and config['disease'] in filters['disease']):
+            filtered_data.append(config)
+
     return filtered_data
