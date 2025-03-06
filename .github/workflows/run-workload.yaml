@@ -28,41 +28,36 @@ jobs:
     runs-on: cfa-cdcgov
     environment: production
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
+    - uses: actions/checkout@v4
 
-      - name: cache poetry
-        uses: actions/cache@v4
-        with:
-          path: ~/.local
-          key: ${{ runner.os }}-poetry
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
+      with:
+        enable-cache: true
 
-      - name: install poetry
-        run: pip install poetry
+    - name: "Set up Python"
+      uses: actions/setup-python@v5
+      with:
+        python-version-file: ".python-version"
 
-      - name: install dependencies
-        run: poetry install
+    - name: Azure Service Principal CLI login
+      uses: azure/login@v2
+      with:
+        creds: ${{ secrets.EDAV_CFA_PREDICT_NNHT_SP }}
 
-      - name: Azure Service Principal CLI login
-        uses: azure/login@v2
-        with:
-          creds: ${{ secrets.EDAV_CFA_PREDICT_NNHT_SP }}
+    - name: set pythonpath
+      run: |
+        echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
 
-      - name: set pythonpath
-        run: |
-          echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
-
-      - name: Execute workload script
-        run: |
-          state=${{ inputs.state }} \
-          disease=${{ inputs.disease }} \
-          reference_dates=${{ inputs.reference_dates }} \
-          report_date=${{ inputs.report_date }} \
-          data_source=${{ inputs.data_source }} \
-          data_path=${{ inputs.data_path }} \
-          data_container=${{ inputs.data_container }} \
-          production_date=${{ inputs.production_date }} \
-          job_id=${{ inputs.job_id }} \
-            poetry run python pipelines/epinow2/generate_config.py
+    - name: Execute workload script
+      run: |
+        state=${{ inputs.state }} \
+        disease=${{ inputs.disease }} \
+        reference_dates=${{ inputs.reference_dates }} \
+        report_date=${{ inputs.report_date }} \
+        data_source=${{ inputs.data_source }} \
+        data_path=${{ inputs.data_path }} \
+        data_container=${{ inputs.data_container }} \
+        production_date=${{ inputs.production_date }} \
+        job_id=${{ inputs.job_id }} \
+          uv run python pipelines/epinow2/generate_config.py
