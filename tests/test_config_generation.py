@@ -1,7 +1,11 @@
 from datetime import date, timedelta
 
-from utils.epinow2.constants import all_diseases, all_states, nssp_states_omit
-from utils.epinow2.functions import (
+from src.cfa_config_generator.utils.epinow2.constants import (
+    all_diseases,
+    all_states,
+    nssp_states_omit,
+)
+from src.cfa_config_generator.utils.epinow2.functions import (
     generate_task_configs,
     generate_timestamp,
     validate_args,

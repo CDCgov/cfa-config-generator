@@ -2,8 +2,12 @@ from datetime import date, timedelta
 
 import pytest
 
-from utils.epinow2.constants import all_diseases, all_states, nssp_states_omit
-from utils.epinow2.functions import (
+from src.cfa_config_generator.utils.epinow2.constants import (
+    all_diseases,
+    all_states,
+    nssp_states_omit,
+)
+from src.cfa_config_generator.utils.epinow2.functions import (
     extract_user_args,
     generate_default_job_id,
     generate_timestamp,
