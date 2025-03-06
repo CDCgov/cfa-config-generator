@@ -1,5 +1,5 @@
-from datetime import date, timedelta
 import os
+from datetime import date, timedelta
 
 from utils.epinow2.constants import all_diseases, all_states, nssp_states_omit
 from utils.epinow2.functions import (
@@ -65,6 +65,7 @@ def test_single_geo_disease_set():
     total_tasks_expected = 1
     assert len(task_configs) == total_tasks_expected
 
+
 def test_single_exclusion_generates_number_configs():
     """Tests that a single disease pair exclusion generates 101 configs."""
 
@@ -84,6 +85,7 @@ def test_single_exclusion_generates_number_configs():
     total_tasks_expected = 101
     assert len(task_configs) == total_tasks_expected
 
+
 def test_double_exclusion_generates_number_configs():
     """Tests that two disease pair exclusions generates 100 configs."""
 
@@ -102,4 +104,3 @@ def test_double_exclusion_generates_number_configs():
 
     total_tasks_expected = 100
     assert len(task_configs) == total_tasks_expected
-
