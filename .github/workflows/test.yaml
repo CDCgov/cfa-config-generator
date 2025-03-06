@@ -1,4 +1,4 @@
-name: test
+name: Python build and test
 
 on:
   pull_request:
@@ -6,23 +6,26 @@ on:
     branches: [main]
 
 jobs:
-  install-and-test:
+  build-and-test:
+    name: python
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v5
-        with:
-          enable-cache: true
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
+      with:
+        enable-cache: true
 
-      - name: Set up Python
-      - uses: actions/setup-python@v5
-        with:
-          python-version-file: ".python-version"
+    - name: "Set up Python"
+      uses: actions/setup-python@v5
+      with:
+        python-version-file: ".python-version"
 
-      - name: Install the project
-        run: uv sync --all-extras --dev
+    - name: Install the project
+      run: uv sync --all-extras --dev
 
-      - name: run tests
-        run: uv run pytest
+    - name: Run tests
+      # For example, using `pytest`
+      run: uv run pytest
