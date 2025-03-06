@@ -6,6 +6,7 @@ from utils.epinow2.functions import (
     validate_args,
 )
 
+
 def test_exclusions():
     report_date = production_date = date.today()
     as_of_date = generate_timestamp()
@@ -24,7 +25,7 @@ def test_exclusions():
         "production_date": production_date,
         "job_id": "test-job-id",
         "as_of_date": as_of_date,
-        "task_exclusions": task_exclusions
+        "task_exclusions": task_exclusions,
     }
     validated_args = validate_args(**default_args)
     task_configs, _ = generate_task_configs(**validated_args)

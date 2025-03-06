@@ -19,6 +19,7 @@ def test_extract_user_args():
     min_reference_date = report_date - timedelta(weeks=8)
 
     default_args = {
+        "task_exclusions": None,
         "state": "all",
         "disease": "all",
         "report_date": report_date,

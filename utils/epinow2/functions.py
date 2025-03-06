@@ -1,4 +1,3 @@
-import ast
 import os
 from datetime import date, datetime, timedelta, timezone
 from uuid import UUID, uuid1
@@ -126,10 +125,15 @@ def validate_args(
         for ind_state in state_excl:
             if ind_state not in all_states:
                 raise ValueError(f"State {ind_state} not recognized.")
-        for ind_disease in disease_excl:    
+        for ind_disease in disease_excl:
             if ind_disease not in all_diseases:
-                raise ValueError(f"Disease {ind_disease} not recognized. Valid options are 'COVID-19' or 'Influenza'")
-        args_dict["task_exclusions"] = {"geo_value": state_excl, "disease" : disease_excl}
+                raise ValueError(
+                    f"Disease {ind_disease} not recognized. Valid options are 'COVID-19' or 'Influenza'"
+                )
+        args_dict["task_exclusions"] = {
+            "geo_value": state_excl,
+            "disease": disease_excl,
+        }
     if state == "all":
         if data_source == "nssp":
             args_dict["state"] = list(set(all_states) - set(nssp_states_omit))
@@ -294,15 +298,16 @@ def generate_task_configs(
 
     return configs, job_id
 
+
 def exclude_data(config_data, filters):
     """
     Excludes a list of dictionaries based on multiple key-value pairs.
 
     Args:
         data: A list of dictionaries.
-        filters: A dictionary where keys are the keys to filter on, 
+        filters: A dictionary where keys are the keys to filter on,
                  and values are the values to match. This dictionary
-                 should hold a "geo_value" and "disease"; ex. 
+                 should hold a "geo_value" and "disease"; ex.
                  {"geo_value": "NY", "disease": "COVID-19"}
 
     Returns:
@@ -310,7 +315,10 @@ def exclude_data(config_data, filters):
     """
     filtered_data = []
     for config in config_data:
-        if not (config['geo_value'] in filters['geo_value'] and config['disease'] in filters['disease']):
+        if not (
+            config["geo_value"] in filters["geo_value"]
+            and config["disease"] in filters["disease"]
+        ):
             filtered_data.append(config)
 
     return filtered_data
