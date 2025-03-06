@@ -290,7 +290,7 @@ def generate_task_configs(
             configs.append(task_config)
 
     if task_exclusions is not None:
-        configs = exclude_data(configs, sanitized_args['task_exclusions'])
+        configs = exclude_data(configs, task_exclusions)
 
     return configs, job_id
 
