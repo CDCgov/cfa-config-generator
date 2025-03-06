@@ -1,7 +1,9 @@
 from datetime import date, timedelta
+import os
 
 from utils.epinow2.constants import all_diseases, all_states, nssp_states_omit
 from utils.epinow2.functions import (
+    extract_user_args,
     generate_task_configs,
     generate_timestamp,
     validate_args,
@@ -62,3 +64,42 @@ def test_single_geo_disease_set():
     task_configs, _ = generate_task_configs(**validated_args)
     total_tasks_expected = 1
     assert len(task_configs) == total_tasks_expected
+
+def test_single_exclusion_generates_number_configs():
+    """Tests that a single disease pair exclusion generates 101 configs."""
+
+    os.environ["task_exclusions"] = "ID:COVID-19"
+
+    as_of_date = generate_timestamp()
+
+    # Pull run parameters from environment
+    user_args = extract_user_args(as_of_date=as_of_date)
+
+    # Validate and sanitize args
+    sanitized_args = validate_args(**user_args)
+
+    # Generate task-specific configs
+    task_configs, _ = generate_task_configs(**sanitized_args)
+
+    total_tasks_expected = 101
+    assert len(task_configs) == total_tasks_expected
+
+def test_double_exclusion_generates_number_configs():
+    """Tests that two disease pair exclusions generates 100 configs."""
+
+    os.environ["task_exclusions"] = "ID:COVID-19,WA:Influenza"
+
+    as_of_date = generate_timestamp()
+
+    # Pull run parameters from environment
+    user_args = extract_user_args(as_of_date=as_of_date)
+
+    # Validate and sanitize args
+    sanitized_args = validate_args(**user_args)
+
+    # Generate task-specific configs
+    task_configs, _ = generate_task_configs(**sanitized_args)
+
+    total_tasks_expected = 100
+    assert len(task_configs) == total_tasks_expected
+
