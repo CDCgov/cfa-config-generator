@@ -22,6 +22,8 @@ on:
         description: 'Production date (default: today; format: YYYY-MM-DD)'
       job_id:
         description: 'Job ID (default: Rt-estimation-<timestamp>-<uuid>)'
+      task_exclusions:
+        description: 'Task exclusions (state:disease pair - default: None; ex: NY:COVID-19)'
 
 jobs:
   run-workload:
@@ -65,4 +67,5 @@ jobs:
           data_container=${{ inputs.data_container }} \
           production_date=${{ inputs.production_date }} \
           job_id=${{ inputs.job_id }} \
+          task_exclusions=${{ inputs.task_exclusions }} \
             poetry run python pipelines/epinow2/generate_config.py
