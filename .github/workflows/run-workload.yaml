@@ -23,7 +23,7 @@ on:
       job_id:
         description: 'Job ID (default: Rt-estimation-<timestamp>-<uuid>)'
       task_exclusions:
-        description: 'Task exclusions (state:disease pair - default: None; ex: NY:Covid)'
+        description: 'Task exclusions (state:disease pair - default: None; ex: NY:COVID-19)'
 
 jobs:
   run-workload:
