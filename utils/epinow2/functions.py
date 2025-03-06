@@ -314,11 +314,15 @@ def exclude_data(config_data, filters):
         A new list containing the dictionaries that do not match all filter criteria.
     """
     excl_list = []
-    for i in zip(filters['geo_value'], filters['disease']):
+    for i in zip(filters["geo_value"], filters["disease"]):
         excl_list.append(i)
-    
+
     filter_set = set(excl_list)
 
-    filtered_data = [entry for entry in config_data if (entry.get('geo_value'), entry.get('disease')) not in filter_set]
+    filtered_data = [
+        entry
+        for entry in config_data
+        if (entry.get("geo_value"), entry.get("disease")) not in filter_set
+    ]
 
     return filtered_data
