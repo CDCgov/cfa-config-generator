@@ -5,7 +5,8 @@ description = "Config generation tool for modeling pipelines."
 readme = "README.md"
 authors = [
     { name = "Nate McIntosh", email = "NMcIntosh@cdc.gov" },
-    { name = "amondal2", email = "ab59@cdc.gov" }
+    { name = "amondal2", email = "ab59@cdc.gov" },
+    { name = "Micah Wiesner", email = "zqm6@cdc.gov" }
 ]
 requires-python = ">=3.13.2"
 dependencies = [
