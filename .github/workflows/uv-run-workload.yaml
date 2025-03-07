@@ -45,10 +45,6 @@ jobs:
       with:
         creds: ${{ secrets.EDAV_CFA_PREDICT_NNHT_SP }}
 
-    - name: set pythonpath
-      run: |
-        echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
-
     - name: Execute workload script
       run: |
         state=${{ inputs.state }} \
