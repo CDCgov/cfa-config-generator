@@ -1,0 +1,63 @@
+name: run-workload
+description: Run a workload to create a new modeling job and associated task configs.
+
+on:
+  workflow_dispatch:
+    inputs:
+      state:
+        description: 'State to run (default: all)'
+      disease:
+        description: 'Disease to run (default: all)'
+      report_date:
+        description: 'Report date (default: today; format: YYYY-MM-DD)'
+      reference_dates:
+        description: 'Reference dates (default: [8 weeks before, 1 day before] report date; format: YYYY-MM-DD, YYYY-MM-DD)'
+      data_source:
+        description: 'Data source (default: nssp)'
+      data_path:
+        description: 'Data path (default: gold/)'
+      data_container:
+        description: 'Data path (default: None)'
+      production_date:
+        description: 'Production date (default: today; format: YYYY-MM-DD)'
+      job_id:
+        description: 'Job ID (default: Rt-estimation-<timestamp>-<uuid>)'
+
+jobs:
+  run-workload:
+    runs-on: cfa-cdcgov
+    environment: production
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
+      with:
+        enable-cache: true
+
+    - name: "Set up Python"
+      uses: actions/setup-python@v5
+      with:
+        python-version-file: ".python-version"
+
+    - name: Azure Service Principal CLI login
+      uses: azure/login@v2
+      with:
+        creds: ${{ secrets.EDAV_CFA_PREDICT_NNHT_SP }}
+
+    - name: set pythonpath
+      run: |
+        echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
+
+    - name: Execute workload script
+      run: |
+        state=${{ inputs.state }} \
+        disease=${{ inputs.disease }} \
+        reference_dates=${{ inputs.reference_dates }} \
+        report_date=${{ inputs.report_date }} \
+        data_source=${{ inputs.data_source }} \
+        data_path=${{ inputs.data_path }} \
+        data_container=${{ inputs.data_container }} \
+        production_date=${{ inputs.production_date }} \
+        job_id=${{ inputs.job_id }} \
+          uv run python pipelines/epinow2/generate_config.py
