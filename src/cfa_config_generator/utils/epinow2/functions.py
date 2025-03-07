@@ -2,7 +2,7 @@ import os
 from datetime import date, datetime, timedelta, timezone
 from uuid import UUID, uuid1
 
-from src.cfa_config_generator.utils.epinow2.constants import (
+from cfa_config_generator.utils.epinow2.constants import (
     all_diseases,
     all_states,
     nssp_states_omit,

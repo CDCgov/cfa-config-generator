@@ -3,7 +3,7 @@ import json
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
 
-from src.cfa_config_generator.utils.epinow2.constants import azure_storage
+from cfa_config_generator.utils.epinow2.constants import azure_storage
 
 
 def instantiate_blob_service_client(

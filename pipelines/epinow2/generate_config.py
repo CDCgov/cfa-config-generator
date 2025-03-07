@@ -1,10 +1,10 @@
 import json
 import logging
 
-from src.cfa_config_generator.utils.azure.auth import obtain_sp_credential
-from src.cfa_config_generator.utils.azure.storage import instantiate_blob_service_client
-from src.cfa_config_generator.utils.epinow2.constants import azure_storage
-from src.cfa_config_generator.utils.epinow2.functions import (
+from cfa_config_generator.utils.azure.auth import obtain_sp_credential
+from cfa_config_generator.utils.azure.storage import instantiate_blob_service_client
+from cfa_config_generator.utils.epinow2.constants import azure_storage
+from cfa_config_generator.utils.epinow2.functions import (
     extract_user_args,
     generate_task_configs,
     generate_timestamp,

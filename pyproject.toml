@@ -16,7 +16,7 @@ dependencies = [
 ]
 
 [project.scripts]
-confmod = "cli.console:main"
+confmod = "cfa_config_generator.cli.console:main"
 
 [build-system]
 requires = ["hatchling"]
