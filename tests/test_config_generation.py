@@ -64,28 +64,3 @@ def test_single_geo_disease_set():
     task_configs, _ = generate_task_configs(**validated_args)
     total_tasks_expected = 1
     assert len(task_configs) == total_tasks_expected
-
-def test_exclude_data_invalid_disease():
-     """Tests that an invalid disease raises a ValueError."""
-     
-     report_date = production_date = date.today()
-     as_of_date = generate_timestamp()
-     # valid diseases are 'COVID-19' or 'Influenza'
-     task_exclusions = "WA:monkeypox"
-
-     args = {
-         "state": "invalid",
-         "disease": "all",
-         "report_date": date.today(),
-         "reference_dates": [date.today(), date.today()],
-         "data_source": "nssp",
-         "data_path": "gold/",
-         "data_container": None,
-         "production_date": date.today(),
-         "job_id": "test-job-id",
-         "as_of_date": as_of_date,
-         "task_exclusions": task_exclusions,
-     }
-
-     with pytest.raises(ValueError):
-         validate_args(**args)

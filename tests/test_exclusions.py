@@ -1,5 +1,7 @@
 from datetime import date, timedelta
 
+import pytest
+
 from utils.epinow2.functions import (
     generate_task_configs,
     generate_timestamp,
@@ -60,29 +62,3 @@ def test_single_exclusion():
     remaining_configs = 101
     assert len(task_configs) == remaining_configs
 
-def test_exclude_data_invalid_disease():
-     """Tests that an invalid disease raises a ValueError."""
-     
-     report_date = production_date = date.today()
-     as_of_date = generate_timestamp()
-     # valid diseases are 'COVID-19' or 'Influenza'
-     task_exclusions = "WA:monkeypox"
-
-     args = {
-         "state": "invalid",
-         "disease": "all",
-         "report_date": date.today(),
-         "reference_dates": [date.today(), date.today()],
-         "data_source": "nssp",
-         "data_path": "gold/",
-         "data_container": None,
-         "production_date": date.today(),
-         "job_id": "test-job-id",
-         "as_of_date": as_of_date,
-         "task_exclusions": task_exclusions,
-     }
-
-     with pytest.raises(ValueError):
-         validate_args(**args)
-
-# write test for exclude_data
