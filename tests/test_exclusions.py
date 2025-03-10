@@ -61,9 +61,10 @@ def test_single_exclusion():
     remaining_configs = 101
     assert len(task_configs) == remaining_configs
 
+
 def test_exclude_data():
     """Tests that exclude data function removes a specific state:disease pair."""
-    
+
     report_date = production_date = date.today()
     as_of_date = generate_timestamp()
     max_reference_date = report_date - timedelta(days=1)
