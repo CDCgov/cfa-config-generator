@@ -1,9 +1,7 @@
-import os
 from datetime import date, timedelta
 
 from utils.epinow2.constants import all_diseases, all_states, nssp_states_omit
 from utils.epinow2.functions import (
-    extract_user_args,
     generate_task_configs,
     generate_timestamp,
     validate_args,

@@ -1,7 +1,5 @@
 from datetime import date, timedelta
 
-import pytest
-
 from utils.epinow2.functions import (
     generate_task_configs,
     generate_timestamp,
@@ -35,6 +33,7 @@ def test_exclusions():
     remaining_configs = 100
     assert len(task_configs) == remaining_configs
 
+
 def test_single_exclusion():
     """Tests that a single disease pair exclusion generates 101 configs."""
 
@@ -61,4 +60,3 @@ def test_single_exclusion():
     task_configs, _ = generate_task_configs(**validated_args)
     remaining_configs = 101
     assert len(task_configs) == remaining_configs
-
