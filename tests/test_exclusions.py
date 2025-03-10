@@ -60,3 +60,30 @@ def test_single_exclusion():
     task_configs, _ = generate_task_configs(**validated_args)
     remaining_configs = 101
     assert len(task_configs) == remaining_configs
+
+def test_exclude_data():
+    """Tests that exclude data function removes a specific state:disease pair."""
+    
+    report_date = production_date = date.today()
+    as_of_date = generate_timestamp()
+    max_reference_date = report_date - timedelta(days=1)
+    min_reference_date = report_date - timedelta(weeks=8)
+    task_exclusions = "ID:COVID-19"
+
+    default_args = {
+        "state": "ID",
+        "disease": "COVID-19",
+        "report_date": report_date,
+        "reference_dates": [min_reference_date, max_reference_date],
+        "data_source": "nssp",
+        "data_path": "gold/",
+        "data_container": None,
+        "production_date": production_date,
+        "job_id": "test-job-id",
+        "as_of_date": as_of_date,
+        "task_exclusions": task_exclusions,
+    }
+    validated_args = validate_args(**default_args)
+    task_configs, _ = generate_task_configs(**validated_args)
+    remaining_configs = 0
+    assert len(task_configs) == remaining_configs
