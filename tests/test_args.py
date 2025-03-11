@@ -19,6 +19,7 @@ def test_extract_user_args():
     min_reference_date = report_date - timedelta(weeks=8)
 
     default_args = {
+        "task_exclusions": None,
         "state": "all",
         "disease": "all",
         "report_date": report_date,
@@ -131,5 +132,30 @@ def test_invalid_reference_date_range():
         "data_container": None,
         "production_date": date.today(),
     }
+    with pytest.raises(ValueError):
+        validate_args(**args)
+
+
+def test_invalid_disease_exclusion():
+    """Tests that an invalid disease raises a ValueError."""
+
+    as_of_date = generate_timestamp()
+    # valid diseases are 'COVID-19' or 'Influenza'
+    task_exclusions = "WA:monkeypox"
+
+    args = {
+        "state": "invalid",
+        "disease": "all",
+        "report_date": date.today(),
+        "reference_dates": [date.today(), date.today()],
+        "data_source": "nssp",
+        "data_path": "gold/",
+        "data_container": None,
+        "production_date": date.today(),
+        "job_id": "test-job-id",
+        "as_of_date": as_of_date,
+        "task_exclusions": task_exclusions,
+    }
+
     with pytest.raises(ValueError):
         validate_args(**args)
