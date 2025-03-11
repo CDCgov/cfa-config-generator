@@ -136,8 +136,7 @@ def validate_args(
                 "disease": disease_excl,
             }
         except IndexError:
-            print("Task exclusions should be in the form 'state:disease,state:disease'")
-            raise
+            raise("Task exclusions should be in the form 'state:disease,state:disease'")
 
     if state == "all":
         if data_source == "nssp":
