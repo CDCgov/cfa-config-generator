@@ -135,10 +135,10 @@ def validate_args(
                 "geo_value": state_excl,
                 "disease": disease_excl,
             }
-        except IndexError as e:
-            print(f"Task exclusions should be in the form 'state:disease,state:disease'")
+        except IndexError:
+            print("Task exclusions should be in the form 'state:disease,state:disease'")
             raise
-        
+
     if state == "all":
         if data_source == "nssp":
             args_dict["state"] = list(set(all_states) - set(nssp_states_omit))
