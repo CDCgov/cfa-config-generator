@@ -119,21 +119,26 @@ def validate_args(
     args_dict = {}
     # Split up input string of task_exclusions and validate
     if task_exclusions is not None:
-        task_pairs = task_exclusions.split(",")
-        state_excl = [item.split(":")[0] for item in task_pairs]
-        disease_excl = [item.split(":")[1] for item in task_pairs]
-        for ind_state in state_excl:
-            if ind_state not in all_states:
-                raise ValueError(f"State {ind_state} not recognized.")
-        for ind_disease in disease_excl:
-            if ind_disease not in all_diseases:
-                raise ValueError(
-                    f"Disease {ind_disease} not recognized. Valid options are 'COVID-19' or 'Influenza'"
-                )
-        args_dict["task_exclusions"] = {
-            "geo_value": state_excl,
-            "disease": disease_excl,
-        }
+        try:
+            task_pairs = task_exclusions.split(",")
+            state_excl = [item.split(":")[0] for item in task_pairs]
+            disease_excl = [item.split(":")[1] for item in task_pairs]
+            for ind_state in state_excl:
+                if ind_state not in all_states:
+                    raise ValueError(f"State {ind_state} not recognized.")
+            for ind_disease in disease_excl:
+                if ind_disease not in all_diseases:
+                    raise ValueError(
+                        f"Disease {ind_disease} not recognized. Valid options are 'COVID-19' or 'Influenza'"
+                    )
+            args_dict["task_exclusions"] = {
+                "geo_value": state_excl,
+                "disease": disease_excl,
+            }
+        except IndexError as e:
+            print(f"Task exclusions should be in the form 'state:disease,state:disease'")
+            raise
+        
     if state == "all":
         if data_source == "nssp":
             args_dict["state"] = list(set(all_states) - set(nssp_states_omit))
