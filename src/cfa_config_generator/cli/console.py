@@ -6,19 +6,26 @@ from azure.identity import CredentialUnavailableError
 from rich.console import Console
 from typing_extensions import Annotated
 
-from utils.azure.auth import obtain_sp_credential
-from utils.azure.storage import (
+from cfa_config_generator.utils.azure.auth import obtain_sp_credential
+from cfa_config_generator.utils.azure.storage import (
     download_blob,
     get_tasks_for_job_id,
     get_unique_jobs_from_blobs,
     instantiate_blob_service_client,
 )
-from utils.cli.functions import (
+from cfa_config_generator.utils.cli.functions import (
     update_config,
     update_config_bulk,
 )
-from utils.epinow2.constants import azure_storage, modifiable_params, sample_task
-from utils.epinow2.functions import generate_timestamp, update_task_id
+from cfa_config_generator.utils.epinow2.constants import (
+    azure_storage,
+    modifiable_params,
+    sample_task,
+)
+from cfa_config_generator.utils.epinow2.functions import (
+    generate_timestamp,
+    update_task_id,
+)
 
 app = typer.Typer()
 console = Console()
