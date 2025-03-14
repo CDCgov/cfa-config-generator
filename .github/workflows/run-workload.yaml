@@ -12,10 +12,6 @@ on:
         description: 'Report date (default: today; format: YYYY-MM-DD)'
       reference_dates:
         description: 'Reference dates (default: [8 weeks before, 1 day before] report date; format: YYYY-MM-DD, YYYY-MM-DD)'
-      data_source:
-        description: 'Data source (default: nssp)'
-      data_path:
-        description: 'Data path (default: gold/)'
       data_container:
         description: 'Data path (default: None)'
       production_date:
@@ -24,6 +20,8 @@ on:
         description: 'Job ID (default: Rt-estimation-<timestamp>-<uuid>)'
       task_exclusions:
         description: 'Task exclusions (state:disease pair - default: None; ex: NY:COVID-19)'
+      output_container:
+        description: 'Output container in Azure (default: zs-test-pipeline-update)'
 
 jobs:
   run-workload:
@@ -53,10 +51,9 @@ jobs:
         disease=${{ inputs.disease }} \
         reference_dates=${{ inputs.reference_dates }} \
         report_date=${{ inputs.report_date }} \
-        data_source=${{ inputs.data_source }} \
-        data_path=${{ inputs.data_path }} \
         data_container=${{ inputs.data_container }} \
         production_date=${{ inputs.production_date }} \
         job_id=${{ inputs.job_id }} \
         task_exclusions=${{ inputs.task_exclusions }} \
+        output_container=${{ inputs.output_container }} \
           uv run python pipelines/epinow2/generate_config.py

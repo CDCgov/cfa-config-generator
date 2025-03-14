@@ -26,9 +26,9 @@ def extract_user_args(as_of_date: str) -> dict:
         max_reference_date,
     ]
 
-    data_source = os.getenv("data_source") or "nssp"
-    data_path = os.getenv("data_path") or f"gold/{report_date}.parquet"
+    data_path = f"gold/{report_date}.parquet"
     data_container = os.getenv("data_container") or "nssp-etl"
+    output_container = os.getenv("output_container") or "zs-test-pipeline-update"
     job_id = os.getenv("job_id") or generate_default_job_id(as_of_date=as_of_date)
     return {
         "task_exclusions": task_exclusions,
@@ -36,12 +36,12 @@ def extract_user_args(as_of_date: str) -> dict:
         "disease": disease,
         "report_date": report_date,
         "reference_dates": reference_dates,
-        "data_source": data_source,
         "data_path": data_path,
         "data_container": data_container,
         "production_date": production_date,
         "job_id": job_id,
         "as_of_date": as_of_date,
+        "output_container": output_container,
     }
 
 
@@ -92,12 +92,12 @@ def validate_args(
     disease: str | None = None,
     report_date: date | None = None,
     reference_dates: list[date] | None = None,
-    data_source: str | None = None,
     data_path: str | None = None,
     data_container: str | None = None,
     production_date: date | None = None,
     job_id: str | None = None,
     as_of_date: str | None = None,
+    output_container: str | None = None,
 ) -> dict:
     """Checks that user-supplied arguments are valid and returns them
     in a standardized format for downstream use.
@@ -107,12 +107,12 @@ def validate_args(
         disease: disease to run
         report_date: date of model run
         reference_dates: array of reference (event) dates
-        data_source: source of input data
         data_container: container for input data
         data_path: path to input data
         production_date: production date of model run
         job_id: unique identifier for job
         as_of_date: iso format timestamp of model run
+        output_container: Azure container to store output
     Returns:
         A dictionary of sanitized arguments.
     """
@@ -141,14 +141,7 @@ def validate_args(
             )
 
     if state == "all":
-        if data_source == "nssp":
-            args_dict["state"] = list(set(all_states) - set(nssp_states_omit))
-        elif data_source == "nhsn":
-            args_dict["state"] = all_states
-        else:
-            raise ValueError(
-                f"Data source {data_source} not recognized. Valid options are 'nssp' or 'nhsn'."
-            )
+        args_dict["state"] = list(set(all_states) - set(nssp_states_omit))
     elif state not in all_states:
         raise ValueError(f"State {state} not recognized.")
     else:
@@ -195,6 +188,7 @@ def validate_args(
     args_dict["production_date"] = production_date
     args_dict["job_id"] = job_id
     args_dict["as_of_date"] = as_of_date
+    args_dict["output_container"] = output_container
     return args_dict
 
 
@@ -244,6 +238,7 @@ def generate_task_configs(
     as_of_date: str | None = None,
     production_date: date | None = None,
     job_id: str | None = None,
+    output_container: str | None = None,
 ) -> tuple[list[dict], str]:
     """
     Generates a list of configuration objects based on
@@ -259,6 +254,7 @@ def generate_task_configs(
         data_path: path to input data
         production_date: production date of model run
         job_id: unique identifier for job
+        output_container: Azure container for output
     Returns:
         A list of configuration objects.
     """
@@ -276,6 +272,7 @@ def generate_task_configs(
                 "geo_type": "state" if s != "US" else "country",
                 "report_date": report_date.isoformat(),
                 "production_date": production_date.isoformat(),
+                "output_container": output_container,
                 "parameters": {
                     "as_of_date": as_of_date,
                     "generation_interval": {
