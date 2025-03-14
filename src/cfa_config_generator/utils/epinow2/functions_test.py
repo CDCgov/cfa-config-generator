@@ -28,9 +28,9 @@ def extract_user_args(as_of_date: str) -> dict:
         max_reference_date,
     ]
 
-    data_path = f"gold/{report_date}.parquet"
+    data_source = os.getenv("data_source") or "nssp"
+    data_path = os.getenv("data_path") or f"gold/{report_date}.parquet"
     data_container = os.getenv("data_container") or "nssp-etl"
-    output_container = os.getenv("output_container") or "zs-test-pipeline-update"
     job_id = os.getenv("job_id") or generate_default_job_id(as_of_date=as_of_date)
     return {
         "task_exclusions": task_exclusions,
@@ -39,12 +39,12 @@ def extract_user_args(as_of_date: str) -> dict:
         "disease": disease,
         "report_date": report_date,
         "reference_dates": reference_dates,
+        "data_source": data_source,
         "data_path": data_path,
         "data_container": data_container,
         "production_date": production_date,
         "job_id": job_id,
         "as_of_date": as_of_date,
-        "output_container": output_container,
     }
 
 
@@ -126,9 +126,8 @@ def validate_data_exclusions_path(
 
     return args_dict
 
-def generate_tasks_excl_from_data_excl(
+def validate_args(
     task_exclusions: str | None = None,
-    exclusions: str | None = None,
     state: str | None = None,
     disease: str | None = None,
     report_date: date | None = None,
@@ -139,75 +138,21 @@ def generate_tasks_excl_from_data_excl(
     production_date: date | None = None,
     job_id: str | None = None,
     as_of_date: str | None = None,
-    output_container: str | None = None,
-) -> str:
-    """ 
-    Confirms that file exists at the path listed, within the given data container,
-    and with the required variables state, disease, reference_date, report_date.
-    Next, creates an output string in the task exclusion form in the state:disease 
-    pair form with all of the states and disease to not have tasks created for
-    """
-    class CustomError(Exception):
-        pass
-
-    excl_df = pl.read_csv(exclusions)
-
-    df_cols = ["state", "disease", "report_date", "reference_date"]
-    excl_cols = set(excl_df.columns)
-    missing_cols = list(set(df_cols).difference(excl_cols))
-    if len(missing_cols) > 0:
-        raise CustomError(f"data exclusions file missing: {missing_cols}")
-
-    all_set = []
-    for state in all_states:
-        for disease in all_diseases:
-            dict_inst = [state, disease]
-            all_set.append(dict_inst)
-
-    incl_states = excl_df.get_column("state").to_list()
-    incl_disease = excl_df.get_column("disease").to_list()
-    incl_set = [list(x) for x in zip(incl_states, incl_disease)]
-
-    excl_set = [x for x in all_set if x not in incl_set]
-
-    element_delimiter=":"
-    sublist_delimiter=","
-    int_list = []
-    for i in excl_set:
-        int_list.append(element_delimiter.join(map(str, i)))
-    out_str = sublist_delimiter.join(int_list)
-
-    return out_str
-
-def validate_args(
-    task_exclusions: str | None = None,
-    exclusions: str | None = None,
-    state: str | None = None,
-    disease: str | None = None,
-    report_date: date | None = None,
-    reference_dates: list[date] | None = None,
-    data_path: str | None = None,
-    data_container: str | None = None,
-    production_date: date | None = None,
-    job_id: str | None = None,
-    as_of_date: str | None = None,
-    output_container: str | None = None,
 ) -> dict:
     """Checks that user-supplied arguments are valid and returns them
     in a standardized format for downstream use.
     Parameters:
         task_exclusions: state:disease pair to exclude from model run
-        exclusions: path to exclusions csv
         state: geography to run model
         disease: disease to run
         report_date: date of model run
         reference_dates: array of reference (event) dates
+        data_source: source of input data
         data_container: container for input data
         data_path: path to input data
         production_date: production date of model run
         job_id: unique identifier for job
         as_of_date: iso format timestamp of model run
-        output_container: Azure container to store output
     Returns:
         A dictionary of sanitized arguments.
     """
@@ -233,9 +178,17 @@ def validate_args(
         except IndexError:
             raise (
                 "Task exclusions should be in the form 'state:disease,state:disease'"
-            )        
+            )
+    
     if state == "all":
-        args_dict["state"] = list(set(all_states) - set(nssp_states_omit))
+        if data_source == "nssp":
+            args_dict["state"] = list(set(all_states) - set(nssp_states_omit))
+        elif data_source == "nhsn":
+            args_dict["state"] = all_states
+        else:
+            raise ValueError(
+                f"Data source {data_source} not recognized. Valid options are 'nssp' or 'nhsn'."
+            )
     elif state not in all_states:
         raise ValueError(f"State {state} not recognized.")
     else:
@@ -282,9 +235,6 @@ def validate_args(
     args_dict["production_date"] = production_date
     args_dict["job_id"] = job_id
     args_dict["as_of_date"] = as_of_date
-    args_dict["exclusions"] = exclusions
-    args_dict["output_container"] = output_container
-    args_dict["exclusions"] = exclusions
     return args_dict
 
 
@@ -335,7 +285,6 @@ def generate_task_configs(
     as_of_date: str | None = None,
     production_date: date | None = None,
     job_id: str | None = None,
-    output_container: str | None = None,
 ) -> tuple[list[dict], str]:
     """
     Generates a list of configuration objects based on
@@ -352,7 +301,6 @@ def generate_task_configs(
         data_path: path to input data
         production_date: production date of model run
         job_id: unique identifier for job
-        output_container: Azure container for output
     Returns:
         A list of configuration objects.
     """
@@ -363,7 +311,6 @@ def generate_task_configs(
             task_config = {
                 "job_id": job_id,
                 "task_id": generate_task_id(state=s, disease=d),
-                "exclusions": exclusions,
                 "min_reference_date": min(reference_dates).isoformat(),
                 "max_reference_date": max(reference_dates).isoformat(),
                 "disease": d,
@@ -371,7 +318,6 @@ def generate_task_configs(
                 "geo_type": "state" if s != "US" else "country",
                 "report_date": report_date.isoformat(),
                 "production_date": production_date.isoformat(),
-                "output_container": output_container,
                 "parameters": {
                     "as_of_date": as_of_date,
                     "generation_interval": {

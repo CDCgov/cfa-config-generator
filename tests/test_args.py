@@ -10,6 +10,7 @@ from cfa_config_generator.utils.epinow2.constants import (
 from cfa_config_generator.utils.epinow2.functions import (
     extract_user_args,
     generate_default_job_id,
+    generate_tasks_excl_from_data_excl,
     generate_timestamp,
     validate_args,
 )
@@ -24,6 +25,7 @@ def test_extract_user_args():
 
     default_args = {
         "task_exclusions": None,
+        "exclusions": None,
         "state": "all",
         "disease": "all",
         "report_date": report_date,
@@ -52,6 +54,7 @@ def test_validate_args_default():
     default_args = {
         "state": "all",
         "disease": "all",
+        "exclusions": None,
         "report_date": report_date,
         "production_date": production_date,
         "reference_dates": [min_reference_date, max_reference_date],
@@ -66,6 +69,7 @@ def test_validate_args_default():
     assert validated_args == {
         "state": list(set(all_states) - set(nssp_states_omit)),
         "disease": all_diseases,
+        "exclusions": None,
         "reference_dates": [min_reference_date, max_reference_date],
         "report_date": report_date,
         "data_path": f"gold/{report_date}.parquet",
@@ -159,3 +163,22 @@ def test_invalid_disease_exclusion():
 
     with pytest.raises(ValueError):
         validate_args(**args)
+
+def test_invalid_exclusions_file():
+    """Tests that an invalid exclusion raises a CustomError."""
+
+    class CustomError(Exception):
+        pass
+
+    args = {
+        "state": "all",
+        "disease": "all",
+        "exclusions": "tests/test_exclusions_fails.csv",
+        "report_date": date.today(),
+        "reference_dates": [date.today(), date.today()],
+        "data_path": "gold/",
+        "data_container": None,
+        "production_date": date.today(),
+    }
+    with pytest.raises(CustomError):
+        generate_tasks_excl_from_data_excl(**args)
