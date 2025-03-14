@@ -24,6 +24,8 @@ on:
         description: 'Job ID (default: Rt-estimation-<timestamp>-<uuid>)'
       task_exclusions:
         description: 'Task exclusions (state:disease pair - default: None; ex: NY:COVID-19)'
+      output_container:
+        description: 'Output container in Azure (default: zs-test-pipeline-update)'
 
 jobs:
   run-workload:
@@ -59,4 +61,5 @@ jobs:
         production_date=${{ inputs.production_date }} \
         job_id=${{ inputs.job_id }} \
         task_exclusions=${{ inputs.task_exclusions }} \
+        output_container=${{ inputs.output_container }} \
           uv run python pipelines/epinow2/generate_config.py

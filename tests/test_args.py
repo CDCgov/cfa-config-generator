@@ -34,6 +34,7 @@ def test_extract_user_args():
         "data_container": "nssp-etl",
         "job_id": generate_default_job_id(as_of_date=as_of_date),
         "as_of_date": as_of_date,
+        "output_container": "test-container",
     }
 
     extracted_args = extract_user_args(as_of_date=as_of_date)
@@ -60,6 +61,7 @@ def test_validate_args_default():
         "data_container": None,
         "job_id": "test-job-id",
         "as_of_date": as_of_date,
+        "output_container": "test-container",
     }
 
     validated_args = validate_args(**default_args)
@@ -73,6 +75,7 @@ def test_validate_args_default():
         "production_date": date.today(),
         "job_id": "test-job-id",
         "as_of_date": as_of_date,
+        "output_container": "test-container",
     }
 
 

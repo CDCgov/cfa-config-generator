@@ -29,6 +29,7 @@ def extract_user_args(as_of_date: str) -> dict:
     data_source = os.getenv("data_source") or "nssp"
     data_path = os.getenv("data_path") or f"gold/{report_date}.parquet"
     data_container = os.getenv("data_container") or "nssp-etl"
+    output_container = os.getenv("output_container") or "zs-test-pipeline-update"
     job_id = os.getenv("job_id") or generate_default_job_id(as_of_date=as_of_date)
     return {
         "task_exclusions": task_exclusions,
@@ -42,6 +43,7 @@ def extract_user_args(as_of_date: str) -> dict:
         "production_date": production_date,
         "job_id": job_id,
         "as_of_date": as_of_date,
+        "output_container": output_container,
     }
 
 
@@ -98,6 +100,7 @@ def validate_args(
     production_date: date | None = None,
     job_id: str | None = None,
     as_of_date: str | None = None,
+    output_container: str | None = None,
 ) -> dict:
     """Checks that user-supplied arguments are valid and returns them
     in a standardized format for downstream use.
@@ -113,6 +116,7 @@ def validate_args(
         production_date: production date of model run
         job_id: unique identifier for job
         as_of_date: iso format timestamp of model run
+        output_container: Azure container to store output
     Returns:
         A dictionary of sanitized arguments.
     """
@@ -195,6 +199,7 @@ def validate_args(
     args_dict["production_date"] = production_date
     args_dict["job_id"] = job_id
     args_dict["as_of_date"] = as_of_date
+    args_dict["output_container"] = output_container
     return args_dict
 
 
@@ -244,6 +249,7 @@ def generate_task_configs(
     as_of_date: str | None = None,
     production_date: date | None = None,
     job_id: str | None = None,
+    output_container: str | None = None,
 ) -> tuple[list[dict], str]:
     """
     Generates a list of configuration objects based on
@@ -259,6 +265,7 @@ def generate_task_configs(
         data_path: path to input data
         production_date: production date of model run
         job_id: unique identifier for job
+        output_container: Azure container for output
     Returns:
         A list of configuration objects.
     """
@@ -276,6 +283,7 @@ def generate_task_configs(
                 "geo_type": "state" if s != "US" else "country",
                 "report_date": report_date.isoformat(),
                 "production_date": production_date.isoformat(),
+                "output_container": output_container,
                 "parameters": {
                     "as_of_date": as_of_date,
                     "generation_interval": {
