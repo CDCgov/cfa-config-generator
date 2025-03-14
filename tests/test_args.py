@@ -29,11 +29,11 @@ def test_extract_user_args():
         "report_date": report_date,
         "production_date": production_date,
         "reference_dates": [min_reference_date, max_reference_date],
-        "data_source": "nssp",
         "data_path": f"gold/{report_date}.parquet",
         "data_container": "nssp-etl",
         "job_id": generate_default_job_id(as_of_date=as_of_date),
         "as_of_date": as_of_date,
+        "output_container": "test-container",
     }
 
     extracted_args = extract_user_args(as_of_date=as_of_date)
@@ -55,11 +55,11 @@ def test_validate_args_default():
         "report_date": report_date,
         "production_date": production_date,
         "reference_dates": [min_reference_date, max_reference_date],
-        "data_source": "nssp",
         "data_path": f"gold/{report_date}.parquet",
         "data_container": None,
         "job_id": "test-job-id",
         "as_of_date": as_of_date,
+        "output_container": "test-container",
     }
 
     validated_args = validate_args(**default_args)
@@ -73,6 +73,7 @@ def test_validate_args_default():
         "production_date": date.today(),
         "job_id": "test-job-id",
         "as_of_date": as_of_date,
+        "output_container": "test-container",
     }
 
 
@@ -83,7 +84,6 @@ def test_invalid_state():
         "disease": "all",
         "report_date": date.today(),
         "reference_dates": [date.today(), date.today()],
-        "data_source": "nssp",
         "data_path": "gold/",
         "data_container": None,
         "production_date": date.today(),
@@ -99,7 +99,6 @@ def test_invalid_disease():
         "disease": "invalid",
         "report_date": date.today(),
         "reference_dates": [date.today(), date.today()],
-        "data_source": "nssp",
         "data_path": "gold/",
         "data_container": None,
         "production_date": date.today(),
@@ -115,7 +114,6 @@ def test_invalid_reference_date_format():
         "disease": "all",
         "report_date": date.today(),
         "reference_dates": "2024-01-01",
-        "data_source": "nssp",
         "data_path": "gold/",
         "data_container": None,
         "production_date": date.today(),
@@ -131,7 +129,6 @@ def test_invalid_reference_date_range():
         "disease": "all",
         "report_date": date.today(),
         "reference_dates": "2025-01-01,2026-01-01",
-        "data_source": "nssp",
         "data_path": "gold/",
         "data_container": None,
         "production_date": date.today(),
@@ -152,7 +149,6 @@ def test_invalid_disease_exclusion():
         "disease": "all",
         "report_date": date.today(),
         "reference_dates": [date.today(), date.today()],
-        "data_source": "nssp",
         "data_path": "gold/",
         "data_container": None,
         "production_date": date.today(),
