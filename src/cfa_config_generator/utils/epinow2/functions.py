@@ -139,6 +139,7 @@ def generate_tasks_excl_from_data_excl(
     production_date: date | None = None,
     job_id: str | None = None,
     as_of_date: str | None = None,
+    output_container: str | None = None,
 ) -> str:
     """ 
     Confirms that file exists at the path listed, within the given data container,

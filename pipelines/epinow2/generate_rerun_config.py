@@ -8,11 +8,12 @@ from cfa_config_generator.utils.epinow2.functions import (
     extract_user_args,
     generate_task_configs,
     generate_timestamp,
+    generate_tasks_excl_from_data_excl,
     validate_args,
 )
 
 # TODO: MPW remove after testing locally
-os.environ['exclusions'] = 'test_works.csv'
+os.environ['exclusions'] = 'tests/test_exclusions_passes.csv'
 
 logger = logging.getLogger(__name__)
 
