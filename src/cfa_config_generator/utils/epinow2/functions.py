@@ -1,4 +1,5 @@
 import os
+import polars as pl
 from datetime import date, datetime, timedelta, timezone
 from uuid import UUID, uuid1
 
@@ -16,6 +17,7 @@ def extract_user_args(as_of_date: str) -> dict:
         as_of_date: iso format timestamp of model run
     """
     task_exclusions = os.getenv("task_exclusions") or None
+    exclusions = os.getenv("exclusions") or None
     state = os.getenv("state") or "all"
     disease = os.getenv("disease") or "all"
     report_date = os.getenv("report_date") or date.today()
@@ -32,6 +34,7 @@ def extract_user_args(as_of_date: str) -> dict:
     job_id = os.getenv("job_id") or generate_default_job_id(as_of_date=as_of_date)
     return {
         "task_exclusions": task_exclusions,
+        "exclusions": exclusions,
         "state": state,
         "disease": disease,
         "report_date": report_date,
@@ -85,9 +88,99 @@ def generate_default_job_id(as_of_date: str | None = None) -> str:
     job_id = f"Rt-estimation-{as_of_date}-{job_uuid.hex}".replace(":", "-")
     return job_id
 
+def validate_data_exclusions_path(
+    task_exclusions: str | None = None,
+    exclusions: str | None = None,
+    state: str | None = None,
+    disease: str | None = None,
+    report_date: date | None = None,
+    reference_dates: list[date] | None = None,
+    data_source: str | None = None,
+    data_path: str | None = None,
+    data_container: str | None = None,
+    production_date: date | None = None,
+    job_id: str | None = None,
+    as_of_date: str | None = None,
+) -> str:
+    """ 
+    Confirms that file exists at the path listed, within the given data container,
+    and with the required variables state, disease, reference_date, report_date
+    """
+    class CustomError(Exception):
+        pass
+
+    excl_df = pl.read_csv(exclusions)
+
+    df_cols = ["state", "disease", "report_date", "reference_date"]
+    excl_cols = set(excl_df.columns)
+    missing_cols = list(set(df_cols).difference(excl_cols))
+    if len(missing_cols) > 0:
+        raise CustomError(f"data exclusions file missing: {missing_cols}")
+
+    args_dict = {}
+    args_dict["state"] = excl_df.get_column("state").to_list()
+    args_dict["disease"] = excl_df.get_column("disease").to_list()
+    # args_dict["report_date"] = excl_df.get_column("report_date").to_list()
+    # args_dict["reference_date"] = excl_df.get_column("reference_date").to_list()
+    args_dict["exclusions"] = exclusions
+
+    return args_dict
+
+def generate_tasks_excl_from_data_excl(
+    task_exclusions: str | None = None,
+    exclusions: str | None = None,
+    state: str | None = None,
+    disease: str | None = None,
+    report_date: date | None = None,
+    reference_dates: list[date] | None = None,
+    data_source: str | None = None,
+    data_path: str | None = None,
+    data_container: str | None = None,
+    production_date: date | None = None,
+    job_id: str | None = None,
+    as_of_date: str | None = None,
+) -> str:
+    """ 
+    Confirms that file exists at the path listed, within the given data container,
+    and with the required variables state, disease, reference_date, report_date.
+    Next, creates an output string in the task exclusion form in the state:disease 
+    pair form with all of the states and disease to not have tasks created for
+    """
+    class CustomError(Exception):
+        pass
+
+    excl_df = pl.read_csv(exclusions)
+
+    df_cols = ["state", "disease", "report_date", "reference_date"]
+    excl_cols = set(excl_df.columns)
+    missing_cols = list(set(df_cols).difference(excl_cols))
+    if len(missing_cols) > 0:
+        raise CustomError(f"data exclusions file missing: {missing_cols}")
+
+    all_set = []
+    for state in all_states:
+        for disease in all_diseases:
+            dict_inst = [state, disease]
+            all_set.append(dict_inst)
+
+    incl_states = excl_df.get_column("state").to_list()
+    incl_disease = excl_df.get_column("disease").to_list()
+    incl_set = [list(x) for x in zip(incl_states, incl_disease)]
+
+    excl_set = [x for x in all_set if x not in incl_set]
+
+    element_delimiter=":"
+    sublist_delimiter=","
+    int_list = []
+    for i in excl_set:
+        int_list.append(element_delimiter.join(map(str, i)))
+    out_str = sublist_delimiter.join(int_list)
+
+    return out_str
 
 def validate_args(
     task_exclusions: str | None = None,
+    exclusions: str | None = None,
     state: str | None = None,
     disease: str | None = None,
     report_date: date | None = None,
@@ -103,6 +196,7 @@ def validate_args(
     in a standardized format for downstream use.
     Parameters:
         task_exclusions: state:disease pair to exclude from model run
+        exclusions: path to exclusions csv
         state: geography to run model
         disease: disease to run
         report_date: date of model run
@@ -138,8 +232,7 @@ def validate_args(
         except IndexError:
             raise (
                 "Task exclusions should be in the form 'state:disease,state:disease'"
-            )
-
+            )        
     if state == "all":
         if data_source == "nssp":
             args_dict["state"] = list(set(all_states) - set(nssp_states_omit))
@@ -195,6 +288,7 @@ def validate_args(
     args_dict["production_date"] = production_date
     args_dict["job_id"] = job_id
     args_dict["as_of_date"] = as_of_date
+    args_dict["exclusions"] = exclusions
     return args_dict
 
 
@@ -235,6 +329,7 @@ def update_task_id(
 
 def generate_task_configs(
     task_exclusions: list | None = None,
+    exclusions: str | None = None,
     state: list | None = None,
     disease: list | None = None,
     report_date: date | None = None,
@@ -250,6 +345,7 @@ def generate_task_configs(
     supplied parameters.
     Parameters:
         task_exclusions: state:disease to exclude
+        exclusions: a path to exclusions csv
         state: geography to run model
         disease: pathogen to run
         report_date: date of model run
@@ -269,6 +365,7 @@ def generate_task_configs(
             task_config = {
                 "job_id": job_id,
                 "task_id": generate_task_id(state=s, disease=d),
+                "exclusions": exclusions,
                 "min_reference_date": min(reference_dates).isoformat(),
                 "max_reference_date": max(reference_dates).isoformat(),
                 "disease": d,
