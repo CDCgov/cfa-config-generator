@@ -397,12 +397,12 @@ def generate_task_configs(
             configs.append(task_config)
 
     if task_exclusions is not None:
-        configs = exclude_data(configs, task_exclusions)
+        configs = exclude_task(configs, task_exclusions)
 
     return configs, job_id
 
 
-def exclude_data(config_data, filters):
+def exclude_task(config_data, filters):
     """
     Excludes a list of dictionaries based on multiple key-value pairs.
 

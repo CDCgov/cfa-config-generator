@@ -62,7 +62,7 @@ def test_single_exclusion():
     assert len(task_configs) == remaining_configs
 
 
-def test_exclude_data():
+def test_exclude_task():
     """Tests that exclude data function removes a specific state:disease pair."""
 
     report_date = production_date = date.today()
