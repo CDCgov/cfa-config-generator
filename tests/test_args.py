@@ -162,3 +162,18 @@ def test_invalid_disease_exclusion():
 
     with pytest.raises(ValueError):
         validate_args(**args)
+
+def test_invalid_exclusions_file():
+    """Tests that an invalid state raises a ValueError."""
+    args = {
+        "state": "all",
+        "disease": "all",
+        "exclusions": "tests/test_exclusions_fails.csv",
+        "report_date": date.today(),
+        "reference_dates": [date.today(), date.today()],
+        "data_path": "gold/",
+        "data_container": None,
+        "production_date": date.today(),
+    }
+    with pytest.raises(CustomError):
+        generate_tasks_excl_from_data_excl(**args)
