@@ -6,7 +6,7 @@ readme = "README.md"
 authors = [
     { name = "Nate McIntosh", email = "NMcIntosh@cdc.gov" },
     { name = "amondal2", email = "ab59@cdc.gov" },
-    { name = "Micah Wiesner", email = "zqm6@cdc.gov" }
+    { name = "Micah Wiesner", email = "zqm6@cdc.gov" },
 ]
 requires-python = ">=3.13.2"
 dependencies = [
@@ -24,8 +24,4 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [dependency-groups]
-dev = [
-    "pre-commit>=4.1.0",
-    "pytest>=8.3.5",
-    "ruff>=0.9.9",
-]
+dev = ["pre-commit>=4.1.0", "pytest>=8.3.5", "ruff>=0.9.9"]
