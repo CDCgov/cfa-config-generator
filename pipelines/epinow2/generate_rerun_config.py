@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 
 from cfa_config_generator.utils.azure.auth import obtain_sp_credential
 from cfa_config_generator.utils.azure.storage import instantiate_blob_service_client
@@ -7,20 +8,20 @@ from cfa_config_generator.utils.epinow2.constants import azure_storage
 from cfa_config_generator.utils.epinow2.functions import (
     extract_user_args,
     generate_task_configs,
-    generate_timestamp,
     generate_tasks_excl_from_data_excl,
+    generate_timestamp,
     validate_args,
 )
 
 # TODO: MPW remove after testing locally
-os.environ['exclusions'] = 'tests/test_exclusions_passes.csv'
+os.environ["exclusions"] = "tests/test_exclusions_passes.csv"
 
 logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
     """
     A script to generate `epinow2` configuration objects. This
-    will be invoked either by a user-triggered workflow with 
+    will be invoked either by a user-triggered workflow with
     a supplied data_exclusions_path parameter.
     The .csv file located at the data_exclusions_path location
     should have a column of state, disease report_date,  & reference_date.
@@ -37,9 +38,9 @@ if __name__ == "__main__":
 
     # Validate the file path exists and has the proper columns
     task_excl_str = generate_tasks_excl_from_data_excl(**user_args)
-    
-    # Update task_Exclusions argument 
-    user_args['task_exclusions'] = task_excl_str
+
+    # Update task_Exclusions argument
+    user_args["task_exclusions"] = task_excl_str
 
     # Validate and sanitize args
     sanitized_args = validate_args(**user_args)

@@ -164,6 +164,7 @@ def test_invalid_disease_exclusion():
     with pytest.raises(ValueError):
         validate_args(**args)
 
+
 def test_invalid_exclusions_file():
     """Tests that an invalid exclusion raises a CustomError."""
 

@@ -87,6 +87,7 @@ def test_task_exclusion():
     remaining_configs = 0
     assert len(task_configs) == remaining_configs
 
+
 def test_data_exclusion():
     """Tests that exclude csv only runs task for the tasks specified in csv."""
 
@@ -107,9 +108,9 @@ def test_data_exclusion():
         "task_exclusions": None,
         "exclusions": "tests/test_exclusions_passes.csv",
     }
-    
+
     task_excl_str = generate_tasks_excl_from_data_excl(**default_args)
-    default_args['task_exclusions'] = task_excl_str
+    default_args["task_exclusions"] = task_excl_str
     sanitized_args = validate_args(**default_args)
 
     task_configs, _ = generate_task_configs(**sanitized_args)

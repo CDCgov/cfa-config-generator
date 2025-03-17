@@ -1,7 +1,8 @@
 import os
-import polars as pl
 from datetime import date, datetime, timedelta, timezone
 from uuid import UUID, uuid1
+
+import polars as pl
 
 from cfa_config_generator.utils.epinow2.constants import (
     all_diseases,
@@ -88,6 +89,7 @@ def generate_default_job_id(as_of_date: str | None = None) -> str:
     job_id = f"Rt-estimation-{as_of_date}-{job_uuid.hex}".replace(":", "-")
     return job_id
 
+
 def validate_data_exclusions_path(
     task_exclusions: str | None = None,
     exclusions: str | None = None,
@@ -102,10 +104,11 @@ def validate_data_exclusions_path(
     job_id: str | None = None,
     as_of_date: str | None = None,
 ) -> str:
-    """ 
+    """
     Confirms that file exists at the path listed, within the given data container,
     and with the required variables state, disease, reference_date, report_date
     """
+
     class CustomError(Exception):
         pass
 
@@ -126,6 +129,7 @@ def validate_data_exclusions_path(
 
     return args_dict
 
+
 def generate_tasks_excl_from_data_excl(
     task_exclusions: str | None = None,
     exclusions: str | None = None,
@@ -141,12 +145,13 @@ def generate_tasks_excl_from_data_excl(
     as_of_date: str | None = None,
     output_container: str | None = None,
 ) -> str:
-    """ 
+    """
     Confirms that file exists at the path listed, within the given data container,
     and with the required variables state, disease, reference_date, report_date.
-    Next, creates an output string in the task exclusion form in the state:disease 
+    Next, creates an output string in the task exclusion form in the state:disease
     pair form with all of the states and disease to not have tasks created for
     """
+
     class CustomError(Exception):
         pass
 
@@ -170,14 +175,15 @@ def generate_tasks_excl_from_data_excl(
 
     excl_set = [x for x in all_set if x not in incl_set]
 
-    element_delimiter=":"
-    sublist_delimiter=","
+    element_delimiter = ":"
+    sublist_delimiter = ","
     int_list = []
     for i in excl_set:
         int_list.append(element_delimiter.join(map(str, i)))
     out_str = sublist_delimiter.join(int_list)
 
     return out_str
+
 
 def validate_args(
     task_exclusions: str | None = None,
@@ -233,7 +239,7 @@ def validate_args(
         except IndexError:
             raise (
                 "Task exclusions should be in the form 'state:disease,state:disease'"
-            )        
+            )
     if state == "all":
         args_dict["state"] = list(set(all_states) - set(nssp_states_omit))
     elif state not in all_states:
