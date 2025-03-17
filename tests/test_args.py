@@ -166,20 +166,6 @@ def test_invalid_disease_exclusion():
 
 
 def test_invalid_exclusions_file():
-    """Tests that an invalid exclusion raises a CustomError."""
-
-    class CustomError(Exception):
-        pass
-
-    args = {
-        "state": "all",
-        "disease": "all",
-        "exclusions": "tests/test_exclusions_fails.csv",
-        "report_date": date.today(),
-        "reference_dates": [date.today(), date.today()],
-        "data_path": "gold/",
-        "data_container": None,
-        "production_date": date.today(),
-    }
-    with pytest.raises(CustomError):
-        generate_tasks_excl_from_data_excl(**args)
+    """Tests that an invalid exclusion raises a ValueError."""
+    with pytest.raises(ValueError):
+        generate_tasks_excl_from_data_excl(exclusions="tests/test_exclusions_fails.csv")

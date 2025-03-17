@@ -24,7 +24,7 @@ if __name__ == "__main__":
     will be invoked either by a user-triggered workflow with
     a supplied data_exclusions_path parameter.
     The .csv file located at the data_exclusions_path location
-    should have a column of state, disease report_date,  & reference_date.
+    should have a column of `state`, `disease`, `report_date`, `reference_date`.
     This script is the entrypoint to the workflow that generates
     configuration objects, validates them against a schema, and
     writes them to Blob Storage.
@@ -37,7 +37,7 @@ if __name__ == "__main__":
     user_args = extract_user_args(as_of_date=as_of_date)
 
     # Validate the file path exists and has the proper columns
-    task_excl_str = generate_tasks_excl_from_data_excl(**user_args)
+    task_excl_str: str = generate_tasks_excl_from_data_excl(**user_args)
 
     # Update task_Exclusions argument
     user_args["task_exclusions"] = task_excl_str
@@ -61,7 +61,9 @@ if __name__ == "__main__":
         for task in task_configs:
             blob_name = f"{job_id}/{task['task_id']}.json"
             container_client.upload_blob(
-                name=blob_name, data=json.dumps(task, indent=2), overwrite=True
+                name=blob_name,
+                data=json.dumps(task, indent=2),
+                overwrite=True,
             )
     except (LookupError, ValueError) as e:
         logger.error(f"Error pushing to Azure: {e}")

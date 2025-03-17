@@ -54,7 +54,7 @@ def generate_timestamp() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def get_reference_date_range(report_date: date) -> tuple[date, date]:
+def get_reference_date_range(report_date: date | str) -> tuple[date, date]:
     """Returns a tuple of the minimum and maximum reference dates
     based on the report date, in the case that no reference_dates
     are provided.
@@ -130,59 +130,33 @@ def validate_data_exclusions_path(
     return args_dict
 
 
-def generate_tasks_excl_from_data_excl(
-    task_exclusions: str | None = None,
-    exclusions: str | None = None,
-    state: str | None = None,
-    disease: str | None = None,
-    report_date: date | None = None,
-    reference_dates: list[date] | None = None,
-    data_source: str | None = None,
-    data_path: str | None = None,
-    data_container: str | None = None,
-    production_date: date | None = None,
-    job_id: str | None = None,
-    as_of_date: str | None = None,
-    output_container: str | None = None,
-) -> str:
+def generate_tasks_excl_from_data_excl(exclusions: str) -> str:
     """
     Confirms that file exists at the path listed, within the given data container,
     and with the required variables state, disease, reference_date, report_date.
     Next, creates an output string in the task exclusion form in the state:disease
     pair form with all of the states and disease to not have tasks created for
     """
-
-    class CustomError(Exception):
-        pass
-
     excl_df = pl.read_csv(exclusions)
 
-    df_cols = ["state", "disease", "report_date", "reference_date"]
-    excl_cols = set(excl_df.columns)
-    missing_cols = list(set(df_cols).difference(excl_cols))
-    if len(missing_cols) > 0:
-        raise CustomError(f"data exclusions file missing: {missing_cols}")
+    want_cols: set[str] = {"state", "disease", "report_date", "reference_date"}
+    got_cols: set[str] = set(excl_df.columns)
+    missing_cols: set[str] = want_cols.difference(got_cols)
+    if any(missing_cols):
+        raise ValueError(f"data exclusions file missing: {missing_cols}")
 
-    all_set = []
-    for state in all_states:
-        for disease in all_diseases:
-            dict_inst = [state, disease]
-            all_set.append(dict_inst)
+    all_set: set[tuple[str, str]] = {
+        (state, disease) for state in all_states for disease in all_diseases
+    }
 
     incl_states = excl_df.get_column("state").to_list()
     incl_disease = excl_df.get_column("disease").to_list()
-    incl_set = [list(x) for x in zip(incl_states, incl_disease)]
+    incl_set: set[tuple[str, str]] = set(zip(incl_states, incl_disease))
 
-    excl_set = [x for x in all_set if x not in incl_set]
+    excl_set: set[tuple[str, str]] = all_set.difference(incl_set)
 
-    element_delimiter = ":"
-    sublist_delimiter = ","
-    int_list = []
-    for i in excl_set:
-        int_list.append(element_delimiter.join(map(str, i)))
-    out_str = sublist_delimiter.join(int_list)
-
-    return out_str
+    intermediate_list: list[str] = [es[0] + ":" + es[1] for es in excl_set]
+    return ",".join(intermediate_list)
 
 
 def validate_args(
