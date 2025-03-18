@@ -1,9 +1,15 @@
 import json
 import logging
-import os
+
+import polars as pl
+from azure.storage.blob._container_client import ContainerClient
 
 from cfa_config_generator.utils.azure.auth import obtain_sp_credential
-from cfa_config_generator.utils.azure.storage import instantiate_blob_service_client
+from cfa_config_generator.utils.azure.storage import (
+    instantiate_blob_service_client,
+    prep_blob_path,
+    read_blob_csv,
+)
 from cfa_config_generator.utils.epinow2.constants import azure_storage
 from cfa_config_generator.utils.epinow2.functions import (
     extract_user_args,
@@ -12,9 +18,6 @@ from cfa_config_generator.utils.epinow2.functions import (
     generate_timestamp,
     validate_args,
 )
-
-# TODO: MPW remove after testing locally
-os.environ["exclusions"] = "tests/test_exclusions_passes.csv"
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +28,8 @@ if __name__ == "__main__":
     a supplied data_exclusions_path parameter.
     The .csv file located at the data_exclusions_path location
     should have a column of `state`, `disease`, `report_date`, `reference_date`.
+    If the file is Azure Blob Storage, the path should be of the form
+    `az://<container_name>/<blob_name>`.
     This script is the entrypoint to the workflow that generates
     configuration objects, validates them against a schema, and
     writes them to Blob Storage.
@@ -36,8 +41,42 @@ if __name__ == "__main__":
     # Pull run parameters from environment
     user_args = extract_user_args(as_of_date=as_of_date)
 
+    # The desired schema for the data_exclusions file
+    schema = pl.Schema(
+        [
+            ("state", pl.Utf8),
+            ("disease", pl.Utf8),
+            ("report_date", pl.Date),
+            ("reference_date", pl.Date),
+        ]
+    )
+
+    # Download (if necessary) and read the data_exclusions file
+    try:
+        sp_credential = obtain_sp_credential()
+        storage_client = instantiate_blob_service_client(
+            sp_credential=sp_credential,
+            account_url=azure_storage["azure_storage_account_url"],
+        )
+    except Exception as e:
+        logger.error(f"Error obtaining storage client: {e}")
+        raise e
+
+    excl_path: str = user_args["data_exclusions_path"]
+    if excl_path.startswith("az://"):
+        # Extract container name and blob name from the path
+        container_name, path_in_blob = prep_blob_path(excl_path)
+        ctr_client: ContainerClient = storage_client.get_container_client(
+            container_name
+        )
+        exclusions: pl.DataFrame = read_blob_csv(
+            container_client=ctr_client, blob_name=path_in_blob, schema=schema
+        )
+    else:
+        exclusions: pl.DataFrame = pl.read_csv(excl_path, schema=schema)
+
     # Validate the file path exists and has the proper columns
-    task_excl_str: str = generate_tasks_excl_from_data_excl(**user_args)
+    task_excl_str: str = generate_tasks_excl_from_data_excl(excl_df=exclusions)
 
     # Update task_Exclusions argument
     user_args["task_exclusions"] = task_excl_str
@@ -50,11 +89,6 @@ if __name__ == "__main__":
 
     # Push task configs to Azure Blob Storage
     try:
-        sp_credential = obtain_sp_credential()
-        storage_client = instantiate_blob_service_client(
-            sp_credential=sp_credential,
-            account_url=azure_storage["azure_storage_account_url"],
-        )
         container_client = storage_client.get_container_client(
             container=azure_storage["azure_container_name"]
         )

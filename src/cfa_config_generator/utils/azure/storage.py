@@ -1,7 +1,8 @@
 import json
 
+import polars as pl
 from azure.identity import DefaultAzureCredential
-from azure.storage.blob import BlobServiceClient
+from azure.storage.blob import BlobServiceClient, ContainerClient
 
 from cfa_config_generator.utils.epinow2.constants import azure_storage
 
@@ -99,3 +100,81 @@ def download_blob(
     downloader = blob_client.download_blob(max_concurrency=1, encoding="utf-8")
     blob_text = downloader.readall()
     return json.loads(blob_text)
+
+
+def read_blob_csv(
+    container_client: ContainerClient, blob_name: str, **kwargs
+) -> pl.DataFrame:
+    """
+    Read a CSV file from blob storage into memory as a polars DataFrame.
+
+    Parameters
+    ----------
+    container_client : ContainerClient
+        An instantiated client for the blob container, used to retrieve the blob.
+    blob_name : str
+        The name of the blob containing the CSV file.
+    **kwargs
+        Additional keyword arguments to pass to polars' read_csv() function. See list at
+        https://docs.pola.rs/api/python/stable/reference/api/polars.read_csv.html
+    """
+    return pl.read_csv(
+        container_client.get_blob_client(blob_name).download_blob().readall(),
+        **kwargs,
+    )
+
+
+def prep_blob_path(blob_path: str) -> tuple[str, str]:
+    """
+    Takes in a path in blob, of the form `az://<container_name>/<blob_name>`,
+    and returns the container name and blob name as a tuple.
+
+    Parameters
+    ----------
+    blob_path : str
+        The path to the blob in the format `az://<container_name>/<blob_name>`.
+
+    Returns
+    -------
+    tuple[str, str]
+        A tuple containing the container name and blob name.
+        The container name is the first part of the path, and the blob name is the
+        second part of the path.
+        For example, if the input is `az://my_container/my_blob.csv`, the output
+        is `("my_container", "my_blob.csv")`.
+
+    Raises
+    ------
+    ValueError
+        If the input path is not in the expected format.
+        If the input path does not contain a container name and blob name.
+        If the input path is empty.
+    """
+    if not blob_path:
+        raise ValueError("Blob path is empty.")
+
+    if not blob_path.startswith("az://"):
+        raise ValueError(f"Blob path {blob_path} does not start with 'az://'.")
+
+    # Remove the 'az://' prefix
+    blob_path = blob_path.replace("az://", "", 1)
+    if not blob_path:
+        raise ValueError("Blob path is empty after removing 'az://' prefix.")
+
+    # Split the path into container and blob
+    parts: list[str] = blob_path.split("/", 1)
+    if len(parts) != 2:
+        raise ValueError(
+            f"Blob path {blob_path} does not contain a container name and blob name."
+        )
+
+    container, blob = parts
+
+    # Check that the parts are not empty or just a slash
+    if not blob or blob == "/":
+        raise ValueError(f"Blob name {blob} is empty or just a slash.")
+
+    if not container or container == "/":
+        raise ValueError(f"Container name {container} is empty or just a slash.")
+
+    return container, blob
