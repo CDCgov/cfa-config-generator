@@ -22,6 +22,7 @@ on:
         description: 'Task exclusions (state:disease pair - default: None; ex: NY:COVID-19)'
       output_container:
         description: 'Output container in Azure (default: nssp-rt-testing)'
+        default: nssp-rt-testing
 
 jobs:
   run-workload:
@@ -62,11 +63,42 @@ jobs:
 
     - name: Zip folder
       run: |
-        zip -r ${{ steps.get-folder-name.outputs.target_dir }}.zip target/${{ steps.get-folder-name.outputs.target_dir }}
+        cd target && zip -r ../${{ steps.get-folder-name.outputs.target_dir }}.zip ${{ steps.get-folder-name.outputs.target_dir }} && cd ..
 
     - name: Upload Artifacts
+      id: upload-artifacts
       uses: actions/upload-artifact@v4
       with:
         name: ${{ steps.get-folder-name.outputs.target_dir }}
         path: ${{ steps.get-folder-name.outputs.target_dir }}.zip
         retention-days: 1
+
+    - name: Copy to Azure Blob
+      uses: CDCgov/cfa-actions/runner-action@runner-action
+      with:
+        github_app_id: ${{ secrets.CDCENT_ACTOR_APP_ID }}
+        github_app_pem: ${{ secrets.CDCENT_ACTOR_APP_PEM }}
+        wait_for_completion: true
+        print_logs: true
+        script: | 
+          # Fetch the artifact download URL
+          ARTIFACT_URL=$(curl -s -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
+                             -H "Accept: application/vnd.github.v3+json" \
+                             '${{ steps.upload-artifacts.outputs.artifact-url }}' | \
+                             jq -r '.artifacts[] | select(.name == "${{ steps.get-folder-name.outputs.target_dir}}.zip") | .archive_download_url')
+
+          # Download the artifact (as a zip file)
+          curl -L -o artifact.zip -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' "$ARTIFACT_URL"
+
+          # Unzip the downloaded file
+          unzip artifact.zip -d out
+
+          # checking contents of out directory
+          ls -lah out
+
+          echo "Login to Azure with NNH Service Principal"
+          az login --service-principal \
+            --username ${{ fromJSON(secrets.EDAV_CFA_PREDICT_NNHT_SP).clientId }} \
+            --password ${{ fromJSON(secrets.EDAV_CFA_PREDICT_NNHT_SP).clientSecret }} \
+            --tenant ${{ fromJSON(secrets.EDAV_CFA_PREDICT_NNHT_SP).tenantId }} 
+
