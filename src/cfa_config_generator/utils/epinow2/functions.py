@@ -28,7 +28,7 @@ def extract_user_args(as_of_date: str) -> dict:
 
     data_path = f"gold/{report_date}.parquet"
     data_container = os.getenv("data_container") or "nssp-etl"
-    output_container = os.getenv("output_container") or "zs-test-pipeline-update"
+    output_container = os.getenv("output_container") or "nssp-rt-testing"
     job_id = os.getenv("job_id") or generate_default_job_id(as_of_date=as_of_date)
     return {
         "task_exclusions": task_exclusions,

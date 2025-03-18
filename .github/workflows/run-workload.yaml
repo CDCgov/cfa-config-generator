@@ -21,7 +21,7 @@ on:
       task_exclusions:
         description: 'Task exclusions (state:disease pair - default: None; ex: NY:COVID-19)'
       output_container:
-        description: 'Output container in Azure (default: zs-test-pipeline-update)'
+        description: 'Output container in Azure (default: nssp-rt-testing)'
 
 jobs:
   run-workload:
