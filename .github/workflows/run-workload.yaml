@@ -25,7 +25,7 @@ on:
 
 jobs:
   run-workload:
-    runs-on: cfa-cdcgov
+    runs-on: ubuntu-latest
     environment: production
     steps:
     - uses: actions/checkout@v4
@@ -40,11 +40,6 @@ jobs:
       with:
         python-version-file: ".python-version"
 
-    - name: Azure Service Principal CLI login
-      uses: azure/login@v2
-      with:
-        creds: ${{ secrets.EDAV_CFA_PREDICT_NNHT_SP }}
-
     - name: Execute workload script
       run: |
         state=${{ inputs.state }} \
@@ -56,4 +51,18 @@ jobs:
         job_id=${{ inputs.job_id }} \
         task_exclusions=${{ inputs.task_exclusions }} \
         output_container=${{ inputs.output_container }} \
-          uv run python pipelines/epinow2/generate_config.py
+          uv run python pipelines/epinow2/generate_config_local.py
+
+    - name: Get folder name
+      id: get-folder-name
+      run: |
+        child_dir=$(find "$target_dir" -mindepth 1 -maxdepth 1 -type d -print -quit)
+        child_name=$(basename "$child_dir")
+        echo "target_dir=$child_name" >> $GITHUB_OUTPUT
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ steps.get-folder-name.outputs.target_dir }}
+        path: target/${{ steps.get-folder-name.outputs.target_dir }}/
+        retention-days: 1
