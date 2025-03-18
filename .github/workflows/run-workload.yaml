@@ -60,9 +60,13 @@ jobs:
         child_name=$(basename "$child_dir")
         echo "target_dir=$child_name" >> $GITHUB_OUTPUT
 
+    - name: Zip folder
+      run: |
+        zip -r ${{ steps.get-folder-name.outputs.target_dir }}.zip target/{{ steps.get-folder-name.outputs.target_dir }}
+
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: ${{ steps.get-folder-name.outputs.target_dir }}
-        path: target/${{ steps.get-folder-name.outputs.target_dir }}/
+        path: ${{ steps.get-folder-name.outputs.target_dir }}.zip
         retention-days: 1
