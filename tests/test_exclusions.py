@@ -1,11 +1,30 @@
 from datetime import date, timedelta
+from io import StringIO
+from typing import LiteralString
 
+import hypothesis.strategies as st
+import polars as pl
+import pytest
+from hypothesis import given
+from polars.testing.parametric import column, dataframes
+
+from cfa_config_generator.utils.epinow2.constants import all_diseases, all_states
 from cfa_config_generator.utils.epinow2.functions import (
     generate_task_configs,
     generate_tasks_excl_from_data_excl,
     generate_timestamp,
     validate_args,
 )
+
+
+@pytest.fixture
+def good_config() -> LiteralString:
+    """
+    A string representing a valid data exclusions file contents.
+    """
+    return """state,disease,report_date,reference_date
+NY,COVID-19,2025-01-01,2025-01-01
+OH,Influenza,2025-01-01,2025-01-01"""
 
 
 def test_exclusions():
@@ -88,7 +107,7 @@ def test_task_exclusion():
     assert len(task_configs) == remaining_configs
 
 
-def test_data_exclusion():
+def test_data_exclusion(good_config):
     """Tests that exclude csv only runs task for the tasks specified in csv."""
 
     report_date = production_date = date.today()
@@ -109,10 +128,102 @@ def test_data_exclusion():
         "exclusions": "tests/test_exclusions_passes.csv",
     }
 
-    task_excl_str = generate_tasks_excl_from_data_excl(**default_args)
+    task_excl_str = generate_tasks_excl_from_data_excl(
+        pl.read_csv(StringIO(good_config))
+    )
     default_args["task_exclusions"] = task_excl_str
     sanitized_args = validate_args(**default_args)
 
     task_configs, _ = generate_task_configs(**sanitized_args)
     remaining_configs = 2
     assert len(task_configs) == remaining_configs
+
+
+@given(
+    dataframes(
+        cols=[
+            column(name="state", strategy=st.sampled_from(all_states)),
+            column(name="disease", strategy=st.sampled_from(all_diseases)),
+            column(
+                name="report_date",
+                strategy=st.dates(
+                    min_value=date(2025, 1, 1),
+                    max_value=date(2025, 3, 15),
+                ),
+            ),
+            column(
+                name="reference_date",
+                strategy=st.dates(
+                    min_value=date(2025, 1, 1),
+                    max_value=date(2025, 3, 15),
+                ),
+            ),
+        ],
+        min_size=1,
+        max_size=100,
+    )
+)
+def test_data_exclusions_prop_check(data: pl.DataFrame):
+    """
+    We have N = 102 state-disease pairs in total.
+    For a dataframe of some number of rows, n, test that we always get out exactly N-n
+    data exclusions, and the state-disease pairs in the dataframe are **not** in the
+    output string.
+    """
+    got: str = generate_tasks_excl_from_data_excl(data)
+
+    expected_number_of_rows = len(set(zip(data["state"], data["disease"])))
+    total_possible_rows = len(all_states) * len(all_diseases)
+
+    # We should get out exactly total_possible_rows - expected_number_of_rows
+    assert len(got.split(",")) == (total_possible_rows - expected_number_of_rows)
+
+    # We should not get out any of the state-disease pairs in the dataframe
+    for state, disease in zip(data["state"], data["disease"]):
+        assert f"{state}:{disease}" not in got
+
+
+@pytest.mark.parametrize(
+    "df",
+    [
+        # Missing state col
+        pl.DataFrame(
+            {
+                "disease": ["COVID-19", "Influenza"],
+                "report_date": ["2025-01-01", "2025-01-01"],
+                "reference_date": ["2025-01-01", "2025-01-01"],
+            }
+        ),
+        # Missing disease col
+        pl.DataFrame(
+            {
+                "state": ["NY", "OH"],
+                "report_date": ["2025-01-01", "2025-01-01"],
+                "reference_date": ["2025-01-01", "2025-01-01"],
+            }
+        ),
+        # Missing report_date col
+        pl.DataFrame(
+            {
+                "state": ["NY", "OH"],
+                "disease": ["COVID-19", "Influenza"],
+                "reference_date": ["2025-01-01", "2025-01-01"],
+            }
+        ),
+        # Missing reference_date col
+        pl.DataFrame(
+            {
+                "state": ["NY", "OH"],
+                "disease": ["COVID-19", "Influenza"],
+                "report_date": ["2025-01-01", "2025-01-01"],
+            }
+        ),
+    ],
+)
+def test_invalid_exclusions_data(df):
+    """
+    Test that generate_tasks_excl_from_data_excl raises a ValueError when given
+    a dataframe with bad columns
+    """
+    with pytest.raises(ValueError):
+        generate_tasks_excl_from_data_excl(excl_df=df)

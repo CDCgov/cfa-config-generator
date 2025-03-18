@@ -1,3 +1,4 @@
+import itertools
 import os
 from datetime import date, datetime, timedelta, timezone
 from uuid import UUID, uuid1
@@ -130,24 +131,44 @@ def validate_data_exclusions_path(
     return args_dict
 
 
-def generate_tasks_excl_from_data_excl(exclusions: str) -> str:
+def generate_tasks_excl_from_data_excl(excl_df: pl.DataFrame) -> str:
     """
     Confirms that file exists at the path listed, within the given data container,
     and with the required variables state, disease, reference_date, report_date.
     Next, creates an output string in the task exclusion form in the state:disease
-    pair form with all of the states and disease to not have tasks created for
-    """
-    excl_df = pl.read_csv(exclusions)
+    pair form with all of the states and disease to not have tasks created for.
 
+    Parameters
+    -----------
+        excl_df: a dataframe of the exclusions
+
+    Returns
+    -----------
+        A string of the form state:disease,state:disease
+        for all of the state:disease pairs that should
+        be excluded from the task generation.
+
+    Raises
+    -----------
+        ValueError: If the exclusions file is missing required columns.
+
+    Notes
+    -----------
+    Assumes that `excl_df` has schema
+    [
+        (state, pl.String),
+        (disease, pl.String),
+        (report_date, pl.Date),
+        (reference_date, pl.Date)
+    ]
+    """
     want_cols: set[str] = {"state", "disease", "report_date", "reference_date"}
     got_cols: set[str] = set(excl_df.columns)
     missing_cols: set[str] = want_cols.difference(got_cols)
     if any(missing_cols):
         raise ValueError(f"data exclusions file missing: {missing_cols}")
 
-    all_set: set[tuple[str, str]] = {
-        (state, disease) for state in all_states for disease in all_diseases
-    }
+    all_set: set[tuple[str, str]] = set(itertools.product(all_states, all_diseases))
 
     incl_states = excl_df.get_column("state").to_list()
     incl_disease = excl_df.get_column("disease").to_list()

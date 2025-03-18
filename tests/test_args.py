@@ -10,7 +10,6 @@ from cfa_config_generator.utils.epinow2.constants import (
 from cfa_config_generator.utils.epinow2.functions import (
     extract_user_args,
     generate_default_job_id,
-    generate_tasks_excl_from_data_excl,
     generate_timestamp,
     validate_args,
 )
@@ -163,9 +162,3 @@ def test_invalid_disease_exclusion():
 
     with pytest.raises(ValueError):
         validate_args(**args)
-
-
-def test_invalid_exclusions_file():
-    """Tests that an invalid exclusion raises a ValueError."""
-    with pytest.raises(ValueError):
-        generate_tasks_excl_from_data_excl(exclusions="tests/test_exclusions_fails.csv")
