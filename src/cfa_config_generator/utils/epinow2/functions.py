@@ -363,7 +363,7 @@ def generate_task_configs(
             task_config = {
                 "job_id": job_id,
                 "task_id": generate_task_id(state=s, disease=d),
-                "exclusions": exclusions,
+                "exclusions": exclusions or {"path": None},
                 "min_reference_date": min(reference_dates).isoformat(),
                 "max_reference_date": max(reference_dates).isoformat(),
                 "disease": d,
