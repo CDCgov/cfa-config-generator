@@ -285,7 +285,6 @@ def validate_args(
     args_dict["as_of_date"] = as_of_date
     args_dict["exclusions"] = exclusions
     args_dict["output_container"] = output_container
-    args_dict["exclusions"] = exclusions
     return args_dict
 
 
