@@ -91,10 +91,13 @@ jobs:
                'https://api.github.com/repos/CDCgov/cfa-config-generator/actions/artifacts/${{ steps.upload-artifacts.outputs.artifact-id }}/zip' -o artifact.zip
 
           # Unzip the downloaded file
-          unzip artifact.zip -d out
+          unzip artifact.zip
+
+          # Unzip artifact
+          unzip ${{ steps.get-folder-name.outputs.target_dir }}.zip
 
           # checking contents of out directory
-          ls -lah out
+          ls -lah ${{ steps.get-folder-name.outputs.target_dir }}
 
           echo "Login to Azure with NNH Service Principal"
           az login --service-principal \
