@@ -102,5 +102,7 @@ jobs:
             --password ${{ fromJSON(secrets.EDAV_CFA_PREDICT_NNHT_SP).clientSecret }} \
             --tenant ${{ fromJSON(secrets.EDAV_CFA_PREDICT_NNHT_SP).tenantId }} 
 
-          az storage blob upload-batch -d ${{ inputs.output_container }} -s ${{ steps.get-folder-name.outputs.target_dir }}/
+          az storage blob upload-batch \
+          --destination https://cfaazurebatchprd.blob.core.windows.net/rt-epinow2-config \
+          --source ${{ steps.get-folder-name.outputs.target_dir }}/
 
