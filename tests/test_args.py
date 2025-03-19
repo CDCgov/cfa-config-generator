@@ -24,6 +24,7 @@ def test_extract_user_args():
 
     default_args = {
         "task_exclusions": None,
+        "exclusions": None,
         "state": "all",
         "disease": "all",
         "report_date": report_date,
@@ -52,6 +53,7 @@ def test_validate_args_default():
     default_args = {
         "state": "all",
         "disease": "all",
+        "exclusions": None,
         "report_date": report_date,
         "production_date": production_date,
         "reference_dates": [min_reference_date, max_reference_date],
@@ -66,6 +68,7 @@ def test_validate_args_default():
     assert validated_args == {
         "state": list(set(all_states) - set(nssp_states_omit)),
         "disease": all_diseases,
+        "exclusions": None,
         "reference_dates": [min_reference_date, max_reference_date],
         "report_date": report_date,
         "data_path": f"gold/{report_date}.parquet",

@@ -10,7 +10,6 @@ shared_params = {
         "adapt_delta": 0.99,
         "max_treedepth": 12,
     },
-    "exclusions": {"path": None},
     "config_version": "1.0",
     "quantile_width": [0.5, 0.95],
     "model": "EpiNow2",

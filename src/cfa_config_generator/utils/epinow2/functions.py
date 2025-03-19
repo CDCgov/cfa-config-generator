@@ -1,6 +1,9 @@
+import itertools
 import os
 from datetime import date, datetime, timedelta, timezone
 from uuid import UUID, uuid1
+
+import polars as pl
 
 from cfa_config_generator.utils.epinow2.constants import (
     all_diseases,
@@ -16,6 +19,7 @@ def extract_user_args(as_of_date: str) -> dict:
         as_of_date: iso format timestamp of model run
     """
     task_exclusions = os.getenv("task_exclusions") or None
+    exclusions = os.getenv("exclusions") or None
     state = os.getenv("state") or "all"
     disease = os.getenv("disease") or "all"
     report_date = os.getenv("report_date") or date.today()
@@ -32,6 +36,7 @@ def extract_user_args(as_of_date: str) -> dict:
     job_id = os.getenv("job_id") or generate_default_job_id(as_of_date=as_of_date)
     return {
         "task_exclusions": task_exclusions,
+        "exclusions": exclusions,
         "state": state,
         "disease": disease,
         "report_date": report_date,
@@ -50,7 +55,7 @@ def generate_timestamp() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def get_reference_date_range(report_date: date) -> tuple[date, date]:
+def get_reference_date_range(report_date: date | str) -> tuple[date, date]:
     """Returns a tuple of the minimum and maximum reference dates
     based on the report date, in the case that no reference_dates
     are provided.
@@ -86,8 +91,62 @@ def generate_default_job_id(as_of_date: str | None = None) -> str:
     return job_id
 
 
+def generate_tasks_excl_from_data_excl(excl_df: pl.DataFrame) -> str:
+    """
+    Confirms that file exists at the path listed, within the given data container,
+    and with the required variables state, disease, reference_date, report_date.
+    Next, creates an output string in the task exclusion form in the state:disease
+    pair form with all of the states and disease to not have tasks created for.
+
+    Parameters
+    -----------
+        excl_df: a dataframe of the exclusions
+
+    Returns
+    -----------
+        A string of the form state:disease,state:disease
+        for all of the state:disease pairs that should
+        be excluded from the task generation.
+
+    Raises
+    -----------
+        ValueError: If the exclusions file is missing required columns.
+
+    Notes
+    -----------
+    Assumes that `excl_df` has schema
+    [
+        (state, pl.String),
+        (disease, pl.String),
+        (report_date, pl.Date),
+        (reference_date, pl.Date)
+    ]
+    """
+    want_cols: set[str] = {"state", "disease", "report_date", "reference_date"}
+    got_cols: set[str] = set(excl_df.columns)
+    missing_cols: set[str] = want_cols.difference(got_cols)
+    if any(missing_cols):
+        raise ValueError(f"data exclusions file missing: {missing_cols}")
+
+    all_set: set[tuple[str, str]] = set(itertools.product(all_states, all_diseases))
+
+    incl_states = excl_df.get_column("state").to_list()
+    incl_disease = excl_df.get_column("disease").to_list()
+    incl_set: set[tuple[str, str]] = set(zip(incl_states, incl_disease))
+
+    excl_set: set[tuple[str, str]] = all_set.difference(incl_set)
+
+    # Create a list of strings in the form
+    # ["state:disease", "state:disease", "state:disease"]
+    intermediate_list: list[str] = [
+        state + ":" + disease for state, disease in excl_set
+    ]
+    return ",".join(intermediate_list)
+
+
 def validate_args(
     task_exclusions: str | None = None,
+    exclusions: str | None = None,
     state: str | None = None,
     disease: str | None = None,
     report_date: date | None = None,
@@ -103,6 +162,7 @@ def validate_args(
     in a standardized format for downstream use.
     Parameters:
         task_exclusions: state:disease pair to exclude from model run
+        exclusions: path to exclusions csv
         state: geography to run model
         disease: disease to run
         report_date: date of model run
@@ -136,10 +196,9 @@ def validate_args(
                 "disease": disease_excl,
             }
         except IndexError:
-            raise (
+            raise IndexError(
                 "Task exclusions should be in the form 'state:disease,state:disease'"
             )
-
     if state == "all":
         args_dict["state"] = list(set(all_states) - set(nssp_states_omit))
     elif state not in all_states:
@@ -188,6 +247,7 @@ def validate_args(
     args_dict["production_date"] = production_date
     args_dict["job_id"] = job_id
     args_dict["as_of_date"] = as_of_date
+    args_dict["exclusions"] = exclusions
     args_dict["output_container"] = output_container
     return args_dict
 
@@ -229,6 +289,7 @@ def update_task_id(
 
 def generate_task_configs(
     task_exclusions: list | None = None,
+    exclusions: str | None = None,
     state: list | None = None,
     disease: list | None = None,
     report_date: date | None = None,
@@ -245,6 +306,7 @@ def generate_task_configs(
     supplied parameters.
     Parameters:
         task_exclusions: state:disease to exclude
+        exclusions: a path to exclusions csv
         state: geography to run model
         disease: pathogen to run
         report_date: date of model run
@@ -263,8 +325,10 @@ def generate_task_configs(
     for s in state:
         for d in disease:
             task_config = {
+                **shared_params,
                 "job_id": job_id,
                 "task_id": generate_task_id(state=s, disease=d),
+                "exclusions": exclusions or {"path": None},
                 "min_reference_date": min(reference_dates).isoformat(),
                 "max_reference_date": max(reference_dates).isoformat(),
                 "disease": d,
@@ -292,17 +356,16 @@ def generate_task_configs(
                     "path": data_path,
                     "blob_storage_container": data_container,
                 },
-                **shared_params,
             }
             configs.append(task_config)
 
     if task_exclusions is not None:
-        configs = exclude_data(configs, task_exclusions)
+        configs = exclude_task(configs, task_exclusions)
 
     return configs, job_id
 
 
-def exclude_data(config_data, filters):
+def exclude_task(config_data, filters):
     """
     Excludes a list of dictionaries based on multiple key-value pairs.
 

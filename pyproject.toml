@@ -6,12 +6,13 @@ readme = "README.md"
 authors = [
     { name = "Nate McIntosh", email = "NMcIntosh@cdc.gov" },
     { name = "amondal2", email = "ab59@cdc.gov" },
-    { name = "Micah Wiesner", email = "zqm6@cdc.gov" }
+    { name = "Micah Wiesner", email = "zqm6@cdc.gov" },
 ]
 requires-python = ">=3.13.2"
 dependencies = [
     "azure-identity>=1.20.0",
     "azure-storage-blob>=12.24.1",
+    "polars>=1.24.0",
     "typer>=0.15.2",
 ]
 
@@ -24,6 +25,7 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
+    "hypothesis>=6.129.4",
     "pre-commit>=4.1.0",
     "pytest>=8.3.5",
     "ruff>=0.9.9",
