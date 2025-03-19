@@ -86,7 +86,7 @@ jobs:
           # Fetch the artifact download URL
           GET_ARTIFACTS_RES=$(curl -s -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
                              -H "Accept: application/vnd.github.v3+json" \
-                             'https://github.com/CDCgov/cfa-config-generator/actions/artifacts/${{ steps.upload-artifacts.outputs.artifact-id }}')
+                             'https://api.github.com/repos/CDCgov/cfa-config-generator/actions/artifacts/${{ steps.upload-artifacts.outputs.artifact-id }}')
           echo "GET_ARTIFACTS_RES='$GET_ARTIFACTS_RES'"
 
           ARTIFACT_URL=$(echo "$GET_ARTIFACTS_RES" | jq -r '.artifacts[] | select(.name == "${{ steps.get-folder-name.outputs.target_dir}}.zip") | .archive_download_url')
