@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 
 import polars as pl
 from azure.storage.blob._container_client import ContainerClient
@@ -41,6 +42,13 @@ if __name__ == "__main__":
     # Pull run parameters from environment
     user_args = extract_user_args(as_of_date=as_of_date)
 
+    # Pull the data_exclusions file path from the env vars. It it not in the user_args,
+    # because in the general case, we don't need to know about the data_exclusions file,
+    # so that is only handled in this script.
+    excl_path: str | None = os.getenv("data_exclusions_path")
+    if excl_path is None:
+        raise ValueError("data_exclusions_path not found in environment variables.")
+
     # The desired schema for the data_exclusions file
     schema = pl.Schema(
         [
@@ -62,7 +70,6 @@ if __name__ == "__main__":
         logger.error(f"Error obtaining storage client: {e}")
         raise e
 
-    excl_path: str = user_args["data_exclusions_path"]
     if excl_path.startswith("az://"):
         # Extract container name and blob name from the path
         container_name, path_in_blob = prep_blob_path(excl_path)

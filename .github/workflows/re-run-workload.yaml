@@ -5,6 +5,8 @@ description: Run the re-run workload, which reads a data exclusion/outlier CSV a
 on:
   workflow_dispatch:
     inputs:
+      data_exclusions_path:
+        description: 'The path to the data exclusion CSV file. If in Blob, use form `az://<container-name>/<path>`'
       report_date:
         description: 'Report date (default: today; format: YYYY-MM-DD)'
       reference_dates:
@@ -17,8 +19,6 @@ on:
         description: 'Job ID (default: Rt-estimation-<timestamp>-<uuid>)'
       output_container:
         description: 'Output container in Azure (default: nssp-rt-testing)'
-      data_exclusion_csv:
-        description: 'The path to the data exclusion CSV file. If in Blob, use form `az://<container-name>/<path>`'
 
 jobs:
   run-workload:
@@ -50,5 +50,5 @@ jobs:
         production_date=${{ inputs.production_date }} \
         job_id=${{ inputs.job_id }} \
         output_container=${{ inputs.output_container }} \
-        data_exclusion_csv=${{ inputs.data_exclusion_csv }} \
-          uv run python pipelines/epinow2/generate_config.py
+        data_exclusions_path=${{ inputs.data_exclusions_path }} \
+          uv run python pipelines/epinow2/generate_rerun_config.py
