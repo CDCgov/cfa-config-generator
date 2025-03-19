@@ -96,12 +96,11 @@ jobs:
           # Unzip artifact
           unzip ${{ steps.get-folder-name.outputs.target_dir }}.zip
 
-          # checking contents of out directory
-          ls -lah ${{ steps.get-folder-name.outputs.target_dir }}
-
           echo "Login to Azure with NNH Service Principal"
           az login --service-principal \
             --username ${{ fromJSON(secrets.EDAV_CFA_PREDICT_NNHT_SP).clientId }} \
             --password ${{ fromJSON(secrets.EDAV_CFA_PREDICT_NNHT_SP).clientSecret }} \
             --tenant ${{ fromJSON(secrets.EDAV_CFA_PREDICT_NNHT_SP).tenantId }} 
+
+          az storage blob upload-batch -d ${{ inputs.output_container }} -s ${{ steps.get-folder-name.outputs.target_dir }}/
 
