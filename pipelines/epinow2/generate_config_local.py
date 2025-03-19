@@ -2,9 +2,6 @@ import json
 import logging
 import os
 
-from cfa_config_generator.utils.azure.auth import obtain_sp_credential
-from cfa_config_generator.utils.azure.storage import instantiate_blob_service_client
-from cfa_config_generator.utils.epinow2.constants import azure_storage
 from cfa_config_generator.utils.epinow2.functions import (
     extract_user_args,
     generate_task_configs,
@@ -57,7 +54,7 @@ if __name__ == "__main__":
         file_path = os.path.join(output_dir, file_name)
 
         # Write the item to the file
-        with open(file_path, 'w') as file:
+        with open(file_path, "w") as file:
             file.write(json.dumps(task, indent=2))
 
     logger.info(
