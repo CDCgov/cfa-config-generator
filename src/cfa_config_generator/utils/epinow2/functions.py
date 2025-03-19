@@ -361,6 +361,7 @@ def generate_task_configs(
     for s in state:
         for d in disease:
             task_config = {
+                **shared_params,
                 "job_id": job_id,
                 "task_id": generate_task_id(state=s, disease=d),
                 "exclusions": exclusions or {"path": None},
@@ -391,7 +392,6 @@ def generate_task_configs(
                     "path": data_path,
                     "blob_storage_container": data_container,
                 },
-                **shared_params,
             }
             configs.append(task_config)
 
