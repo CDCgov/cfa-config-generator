@@ -82,7 +82,8 @@ jobs:
         print_logs: true
         script: | 
           # Fetch the artifact download URL
-          curl -H "Accept: application/vnd.github.v3+json" \
+          curl -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }} \
+               -H "Accept: application/vnd.github.v3+json" \
                'https://api.github.com/repos/CDCgov/cfa-config-generator/actions/artifacts/${{ steps.upload-artifacts.outputs.artifact-id }}/zip' -o artifact.zip
 
           # Unzip the downloaded file
