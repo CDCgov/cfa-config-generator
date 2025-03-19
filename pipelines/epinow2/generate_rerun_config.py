@@ -77,10 +77,12 @@ if __name__ == "__main__":
             container_name
         )
         exclusions: pl.DataFrame = read_blob_csv(
-            container_client=ctr_client, blob_name=path_in_blob, schema=schema
-        )
+            container_client=ctr_client, blob_name=path_in_blob, schema_overrides=schema
+        ).select(["state", "disease", "report_date", "reference_date"])
     else:
-        exclusions: pl.DataFrame = pl.read_csv(excl_path, schema=schema)
+        exclusions: pl.DataFrame = pl.read_csv(
+            excl_path, schema_overrides=schema
+        ).select(["state", "disease", "report_date", "reference_date"])
 
     # Validate the file path exists and has the proper columns
     task_excl_str: str = generate_tasks_excl_from_data_excl(excl_df=exclusions)
