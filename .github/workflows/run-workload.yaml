@@ -94,7 +94,7 @@ jobs:
           unzip artifact.zip
 
           # Unzip artifact
-          unzip ${{ steps.get-folder-name.outputs.target_dir }}.zip
+          unzip ${{ steps.get-folder-name.outputs.target_dir }}.zip -d artifacts
 
           echo "Login to Azure with NNH Service Principal"
           az login --service-principal \
@@ -104,5 +104,5 @@ jobs:
 
           az storage blob upload-batch \
           --destination https://cfaazurebatchprd.blob.core.windows.net/rt-epinow2-config \
-          --source ${{ steps.get-folder-name.outputs.target_dir }}/
+          --source artifacts/
 
