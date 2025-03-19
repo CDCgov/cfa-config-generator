@@ -3,7 +3,7 @@ import logging
 import os
 
 import polars as pl
-from azure.storage.blob._container_client import ContainerClient
+from azure.storage.blob import ContainerClient, ContentSettings
 
 from cfa_config_generator.utils.azure.auth import obtain_sp_credential
 from cfa_config_generator.utils.azure.storage import (
@@ -113,6 +113,7 @@ if __name__ == "__main__":
                 name=blob_name,
                 data=json.dumps(task, indent=2),
                 overwrite=True,
+                content_settings=ContentSettings(content_type="application/json"),
             )
     except (LookupError, ValueError) as e:
         logger.error(f"Error pushing to Azure: {e}")
