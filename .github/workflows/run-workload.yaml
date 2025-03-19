@@ -1,7 +1,11 @@
 name: run-workload
 description: Run a workload to create a new modeling job and associated task configs.
 
+# TODO: remove on: push:!
 on:
+  push:
+    branches:
+      - gio-runner-migration
   workflow_dispatch:
     inputs:
       state:
@@ -82,9 +86,11 @@ jobs:
         print_logs: true
         script: | 
           # Fetch the artifact download URL
-          curl -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
+          curl -H 'Authorization: token ${{ secrets.GITHUB_TOKEN }}' \
                -H "Accept: application/vnd.github.v3+json" \
                'https://api.github.com/repos/CDCgov/cfa-config-generator/actions/artifacts/${{ steps.upload-artifacts.outputs.artifact-id }}/zip' -o artifact.zip
+
+          cat artifact.zip
 
           # Unzip the downloaded file
           unzip artifact.zip -d out
