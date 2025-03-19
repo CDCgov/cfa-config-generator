@@ -91,46 +91,6 @@ def generate_default_job_id(as_of_date: str | None = None) -> str:
     return job_id
 
 
-def validate_data_exclusions_path(
-    task_exclusions: str | None = None,
-    exclusions: str | None = None,
-    state: str | None = None,
-    disease: str | None = None,
-    report_date: date | None = None,
-    reference_dates: list[date] | None = None,
-    data_source: str | None = None,
-    data_path: str | None = None,
-    data_container: str | None = None,
-    production_date: date | None = None,
-    job_id: str | None = None,
-    as_of_date: str | None = None,
-) -> str:
-    """
-    Confirms that file exists at the path listed, within the given data container,
-    and with the required variables state, disease, reference_date, report_date
-    """
-
-    class CustomError(Exception):
-        pass
-
-    excl_df = pl.read_csv(exclusions)
-
-    df_cols = ["state", "disease", "report_date", "reference_date"]
-    excl_cols = set(excl_df.columns)
-    missing_cols = list(set(df_cols).difference(excl_cols))
-    if len(missing_cols) > 0:
-        raise CustomError(f"data exclusions file missing: {missing_cols}")
-
-    args_dict = {}
-    args_dict["state"] = excl_df.get_column("state").to_list()
-    args_dict["disease"] = excl_df.get_column("disease").to_list()
-    # args_dict["report_date"] = excl_df.get_column("report_date").to_list()
-    # args_dict["reference_date"] = excl_df.get_column("reference_date").to_list()
-    args_dict["exclusions"] = exclusions
-
-    return args_dict
-
-
 def generate_tasks_excl_from_data_excl(excl_df: pl.DataFrame) -> str:
     """
     Confirms that file exists at the path listed, within the given data container,
@@ -232,7 +192,7 @@ def validate_args(
                 "disease": disease_excl,
             }
         except IndexError:
-            raise (
+            raise IndexError(
                 "Task exclusions should be in the form 'state:disease,state:disease'"
             )
     if state == "all":
