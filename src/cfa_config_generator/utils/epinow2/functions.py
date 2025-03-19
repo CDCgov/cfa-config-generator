@@ -136,7 +136,11 @@ def generate_tasks_excl_from_data_excl(excl_df: pl.DataFrame) -> str:
 
     excl_set: set[tuple[str, str]] = all_set.difference(incl_set)
 
-    intermediate_list: list[str] = [es[0] + ":" + es[1] for es in excl_set]
+    # Create a list of strings in the form
+    # ["state:disease", "state:disease", "state:disease"]
+    intermediate_list: list[str] = [
+        state + ":" + disease for state, disease in excl_set
+    ]
     return ",".join(intermediate_list)
 
 
