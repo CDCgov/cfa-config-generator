@@ -22,7 +22,6 @@ on:
         description: 'Task exclusions (state:disease pair - default: None; ex: NY:COVID-19)'
       output_container:
         description: 'Output container in Azure (default: nssp-rt-testing)'
-        default: nssp-rt-testing
 
 jobs:
   run-workload:
