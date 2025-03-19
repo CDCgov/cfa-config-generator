@@ -28,7 +28,7 @@ if __name__ == "__main__":
     will be invoked either by a user-triggered workflow with
     a supplied data_exclusions_path parameter.
     The .csv file located at the data_exclusions_path location
-    should have a column of `state`, `disease`, `report_date`, `reference_date`.
+    should have columns of `state`, `disease`, `report_date`, `reference_date`.
     If the file is Azure Blob Storage, the path should be of the form
     `az://<container_name>/<blob_name>`.
     This script is the entrypoint to the workflow that generates
@@ -87,6 +87,14 @@ if __name__ == "__main__":
 
     # Update task_Exclusions argument
     user_args["task_exclusions"] = task_excl_str
+
+    # Add the path to the data exclusions file to the user_args
+    excl_field = (
+        {"path": path_in_blob, "blob_storage_container": container_name}
+        if excl_path.startswith("az://")
+        else {"path": excl_path, "blob_storage_container": None}
+    )
+    user_args["exclusions"] = excl_field
 
     # Validate and sanitize args
     sanitized_args = validate_args(**user_args)
