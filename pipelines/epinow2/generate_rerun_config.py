@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+from datetime import date
 
 import polars as pl
 from azure.storage.blob import ContainerClient, ContentSettings
@@ -47,19 +48,25 @@ if __name__ == "__main__":
     # so that is only handled in this script.
     excl_path: str | None = os.getenv("data_exclusions_path")
     if excl_path is None:
-        raise ValueError("data_exclusions_path not found in environment variables.")
+        # Set the default to the standard production location, with this report date.
+        # Make sure we have a properly formatted date.
+        rd: date = (
+            date.fromisoformat(user_args["report_date"])
+            if isinstance(user_args["report_date"], str)
+            else user_args["report_date"]
+        )
+        excl_path = f"az://nssp-rt-v2/outliers/{rd.isoformat()}.csv"
 
     # The desired schema for the data_exclusions file
     schema = pl.Schema(
         [
-            ("state", pl.Utf8),
-            ("disease", pl.Utf8),
+            ("state", pl.String),
+            ("disease", pl.String),
             ("report_date", pl.Date),
             ("reference_date", pl.Date),
         ]
     )
 
-    # Download (if necessary) and read the data_exclusions file
     try:
         sp_credential = obtain_sp_credential()
         storage_client = instantiate_blob_service_client(
@@ -70,6 +77,7 @@ if __name__ == "__main__":
         logger.error(f"Error obtaining storage client: {e}")
         raise e
 
+    # Download (if necessary) and read the data_exclusions file
     if excl_path.startswith("az://"):
         # Extract container name and blob name from the path
         container_name, path_in_blob = prep_blob_path(excl_path)
