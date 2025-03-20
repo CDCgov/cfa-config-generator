@@ -67,7 +67,7 @@ jobs:
             echo "Copying image from GHCR to ACR"
             IMAGE_TAG=${{ env.IMAGE_NAME }}:${{ needs.build-pipeline-image.outputs.tag }}
             az acr import --name ${{ env.REGISTRY }} \
-              --source "ghcr.io/cdcent/$IMAGE_TAG" \
+              --source "ghcr.io/cdcgov/$IMAGE_TAG" \
               --username ${{ github.actor }} \
               --password ${{ secrets.GITHUB_TOKEN }} \
               --image "$IMAGE_TAG" \
