@@ -1,7 +1,7 @@
-from azure.identity import AzureCliCredential
+from azure.identity import DefaultAzureCredential
 
 
-def obtain_sp_credential() -> AzureCliCredential:
+def obtain_sp_credential() -> DefaultAzureCredential:
     """Obtains service principal credentials from Azure.
     Returns:
         Instance of AzureCliCredential.
@@ -13,6 +13,6 @@ def obtain_sp_credential() -> AzureCliCredential:
     # if running locally. Check that SP credentials
     # are in environment if running locally.
     # Deployed versions use Managed Identity.
-    sp_credential = AzureCliCredential()
+    sp_credential = DefaultAzureCredential()
 
     return sp_credential
