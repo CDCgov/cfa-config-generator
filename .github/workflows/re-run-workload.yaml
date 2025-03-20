@@ -50,7 +50,7 @@ jobs:
 
       - name: Build Docker Image String
         id: image-name
-        run: echo "image_name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.image-tag.outputs.tag }}" >> $GITHUB_OUTPUT
+        run: echo "image_name=${{ env.REGISTRY }}${{ env.IMAGE_NAME }}:${{ steps.image-tag.outputs.tag }}" >> $GITHUB_OUTPUT
 
       - name: Trigger Container App Job
         uses: CDCgov/cfa-actions/runner-action@v1.3.0
@@ -60,6 +60,11 @@ jobs:
           wait_for_completion: true
           print_logs: true
           script: |
+            az login --service-principal \
+              --username ${{ fromJSON(secrets.EDAV_CFA_PREDICT_NNHT_SP).clientId }} \
+              --password ${{ fromJSON(secrets.EDAV_CFA_PREDICT_NNHT_SP).clientSecret }} \
+              --tenant ${{ fromJSON(secrets.EDAV_CFA_PREDICT_NNHT_SP).tenantId }}
+
             JOB_NAME='cfa-config-generator'
             RESOURCE_GROUP='ext-edav-cfa-prd'
             TEMPLATE='job-template.yaml'
