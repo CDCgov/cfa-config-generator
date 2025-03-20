@@ -91,15 +91,15 @@ jobs:
 
               echo "Updating Job Template"
               yq -i '.containers[0].image = "${{ steps.image-name.outputs.image_name }}"' $TEMPLATE
-              yq -i '.containers[0].env += { "name": "state", "value": "${{ inputs.state }}" }' $TEMPLATE
-              yq -i '.containers[0].env += { "name": "disease", "value": "${{ inputs.disease }}" }' $TEMPLATE
-              yq -i '.containers[0].env += { "name": "reference_dates", "value": "${{ inputs.reference_dates }}" }' $TEMPLATE
-              yq -i '.containers[0].env += { "name": "report_date", "value": "${{ inputs.report_date }}" }' $TEMPLATE
-              yq -i '.containers[0].env += { "name": "data_container", "value": "${{ inputs.data_container }}" }' $TEMPLATE
-              yq -i '.containers[0].env += { "name": "production_date", "value": "${{ inputs.production_date }}" }' $TEMPLATE
-              yq -i '.containers[0].env += { "name": "job_id", "value": "${{ inputs.job_id }}" }' $TEMPLATE
-              yq -i '.containers[0].env += { "name": "task_exclusions", "value": "${{ inputs.task_exclusions }}" }' $TEMPLATE
-              yq -i '.containers[0].env += { "name": "output_container", "value": "${{ inputs.output_container }}" }' $TEMPLATE
+              yq -i '.containers[0].env += [{ "name": "state", "value": "${{ inputs.state }}" }]' $TEMPLATE
+              yq -i '.containers[0].env += [{ "name": "disease", "value": "${{ inputs.disease }}" }]' $TEMPLATE
+              yq -i '.containers[0].env += [{ "name": "reference_dates", "value": "${{ inputs.reference_dates }}" }]' $TEMPLATE
+              yq -i '.containers[0].env += [{ "name": "report_date", "value": "${{ inputs.report_date }}" }]' $TEMPLATE
+              yq -i '.containers[0].env += [{ "name": "data_container", "value": "${{ inputs.data_container }}" }]' $TEMPLATE
+              yq -i '.containers[0].env += [{ "name": "production_date", "value": "${{ inputs.production_date }}" }]' $TEMPLATE
+              yq -i '.containers[0].env += [{ "name": "job_id", "value": "${{ inputs.job_id }}" }]' $TEMPLATE
+              yq -i '.containers[0].env += [{ "name": "task_exclusions", "value": "${{ inputs.task_exclusions }}" }]' $TEMPLATE
+              yq -i '.containers[0].env += [{ "name": "output_container", "value": "${{ inputs.output_container }}" }]' $TEMPLATE
               yq -i '.containers[0].command = [ "uv", "run", "python", "pipelines/epinow2/generate_config.py" ]' $TEMPLATE
               cat $TEMPLATE
 

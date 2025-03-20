@@ -60,6 +60,7 @@ jobs:
           wait_for_completion: true
           print_logs: true
           script: |
+            echo "Logging into Azure CLI"
             az login --service-principal \
               --username ${{ fromJSON(secrets.EDAV_CFA_PREDICT_NNHT_SP).clientId }} \
               --password ${{ fromJSON(secrets.EDAV_CFA_PREDICT_NNHT_SP).clientSecret }} \
@@ -77,13 +78,12 @@ jobs:
               --output yaml > $TEMPLATE
 
               echo "Updating Job Template"
-              yq -i '.containers[0].image = "${{ steps.image-name.outputs.image_name }}"' $TEMPLATE
-              yq -i '.containers[0].env += { "name": "reference_dates", "value": "${{ inputs.reference_dates }}" }' $TEMPLATE
-              yq -i '.containers[0].env += { "name": "report_date", "value": "${{ inputs.report_date }}" }' $TEMPLATE
-              yq -i '.containers[0].env += { "name": "data_container", "value": "${{ inputs.data_container }}" }' $TEMPLATE
-              yq -i '.containers[0].env += { "name": "production_date", "value": "${{ inputs.production_date }}" }' $TEMPLATE
-              yq -i '.containers[0].env += { "name": "job_id", "value": "${{ inputs.job_id }}" }' $TEMPLATE
-              yq -i '.containers[0].env += { "name": "output_container", "value": "${{ inputs.output_container }}" }' $TEMPLATE
+              yq -i '.containers[0].env += [{ "name": "reference_dates", "value": "${{ inputs.reference_dates }}" }]' $TEMPLATE
+              yq -i '.containers[0].env += [{ "name": "report_date", "value": "${{ inputs.report_date }}" }]' $TEMPLATE
+              yq -i '.containers[0].env += [{ "name": "data_container", "value": "${{ inputs.data_container }}" }]' $TEMPLATE
+              yq -i '.containers[0].env += [{ "name": "production_date", "value": "${{ inputs.production_date }}" }]' $TEMPLATE
+              yq -i '.containers[0].env += [{ "name": "job_id", "value": "${{ inputs.job_id }}" }]' $TEMPLATE
+              yq -i '.containers[0].env += [{ "name": "output_container", "value": "${{ inputs.output_container }}" }]' $TEMPLATE
               yq -i '.containers[0].env += { "name": "data_exclusions_path", "value": "${{ inputs.data_exclusions_path }}" }' $TEMPLATE
               yq -i '.containers[0].command = [ "uv", "run", "python", "pipelines/epinow2/generate_rerun_config.py" ]' $TEMPLATE
               cat $TEMPLATE
