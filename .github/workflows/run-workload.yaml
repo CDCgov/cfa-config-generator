@@ -23,81 +23,84 @@ on:
       output_container:
         description: 'Output container in Azure (default: nssp-rt-testing)'
 
+env:
+  # Together, these form: cfaprdbatchcr.azurecr.io/cfa-config-generator
+  REGISTRY: cfaprdbatchcr.azurecr.io/
+  IMAGE_NAME: cfa-config-generator
+  MAIN_BRANCH_NAME: main
+
 jobs:
+  build-and-push:
+    uses: ./.github/workflows/build-and-push.yaml
+    secrets: inherit
+
   run-workload:
+    needs: build-and-push
     runs-on: ubuntu-latest
     environment: production
     steps:
-    - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Install uv
-      uses: astral-sh/setup-uv@v5
-      with:
-        enable-cache: true
+      - name: Extract branch name
+        shell: bash
+        run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
+        id: branch-name
 
-    - name: "Set up Python"
-      uses: actions/setup-python@v5
-      with:
-        python-version-file: ".python-version"
+      - name: Figure out tag (either latest if it is main or the branch name)
+        shell: bash
+        id: image-tag
+        run: |
+          if [ "${{ steps.branch-name.outputs.branch }}" = "${{ env.MAIN_BRANCH_NAME }}" ]; then
+            echo "tag=${{ env.MAIN_BRANCH_NAME }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${{ steps.branch-name.outputs.branch }}" >> $GITHUB_OUTPUT
+          fi
 
-    - name: Execute workload script
-      run: |
-        state=${{ inputs.state }} \
-        disease=${{ inputs.disease }} \
-        reference_dates=${{ inputs.reference_dates }} \
-        report_date=${{ inputs.report_date }} \
-        data_container=${{ inputs.data_container }} \
-        production_date=${{ inputs.production_date }} \
-        job_id=${{ inputs.job_id }} \
-        task_exclusions=${{ inputs.task_exclusions }} \
-        output_container=${{ inputs.output_container }} \
-          uv run python pipelines/epinow2/generate_config_local.py
+      - name: Build Docker Image String
+        id: image-name
+        run: echo "image_name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.image-tag.outputs.tag }}" >> $GITHUB_OUTPUT
 
-    - name: Get folder name
-      id: get-folder-name
-      run: |
-        child_dir=$(find 'target' -mindepth 1 -maxdepth 1 -type d -print -quit)
-        child_name=$(basename "$child_dir")
-        echo "target_dir=$child_name" >> $GITHUB_OUTPUT
+      - name: Trigger Container App Job
+        uses: CDCgov/cfa-actions/runner-action@v1.3.0
+        with:
+          github_app_id: ${{ secrets.CDCENT_ACTOR_APP_ID }}
+          github_app_pem: ${{ secrets.CDCENT_ACTOR_APP_PEM }}
+          wait_for_completion: true
+          print_logs: true
+          script: |
+            JOB_NAME='cfa-config-generator'
+            RESOURCE_GROUP='ext-edav-cfa-prd'
+            TEMPLATE='job-template.yaml'
 
-    - name: Zip folder
-      run: |
-        cd target && zip -r ../${{ steps.get-folder-name.outputs.target_dir }}.zip ${{ steps.get-folder-name.outputs.target_dir }} && cd ..
+            echo "Getting Existing Job Template"
+            az containerapp job show \
+              --name "$JOB_NAME" \
+              --resource-group "$RESOURCE_GROUP" \
+              --query "properties.template" \
+              --output yaml > $TEMPLATE
 
-    - name: Upload Artifacts
-      id: upload-artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ steps.get-folder-name.outputs.target_dir }}
-        path: ${{ steps.get-folder-name.outputs.target_dir }}.zip
-        retention-days: 1
+              echo "Updating Job Template"
+              yq -i '.containers[0].image = "${{ steps.image-name.outputs.image_name }}"' $TEMPLATE
+              yq -i '.containers[0].env += { "name": "state", "value": "${{ inputs.state }}" }' $TEMPLATE
+              yq -i '.containers[0].env += { "name": "disease", "value": "${{ inputs.disease }}" }' $TEMPLATE
+              yq -i '.containers[0].env += { "name": "reference_dates", "value": "${{ inputs.reference_dates }}" }' $TEMPLATE
+              yq -i '.containers[0].env += { "name": "report_date", "value": "${{ inputs.report_date }}" }' $TEMPLATE
+              yq -i '.containers[0].env += { "name": "data_container", "value": "${{ inputs.data_container }}" }' $TEMPLATE
+              yq -i '.containers[0].env += { "name": "production_date", "value": "${{ inputs.production_date }}" }' $TEMPLATE
+              yq -i '.containers[0].env += { "name": "job_id", "value": "${{ inputs.job_id }}" }' $TEMPLATE
+              yq -i '.containers[0].env += { "name": "task_exclusions", "value": "${{ inputs.task_exclusions }}" }' $TEMPLATE
+              yq -i '.containers[0].env += { "name": "output_container", "value": "${{ inputs.output_container }}" }' $TEMPLATE
+              yq -i '.containers[0].command = [ "uv", "run", "python", "pipelines/epinow2/generate_config.py" ]' $TEMPLATE
+              cat $TEMPLATE
 
-    - name: Copy to Azure Blob
-      uses: CDCgov/cfa-actions/runner-action@v1.3.0
-      with:
-        github_app_id: ${{ secrets.CDCENT_ACTOR_APP_ID }}
-        github_app_pem: ${{ secrets.CDCENT_ACTOR_APP_PEM }}
-        wait_for_completion: true
-        print_logs: true
-        script: |
-          echo "Fetching artifacts"
-          curl -L -H 'Authorization: token ${{ secrets.GITHUB_TOKEN }}' \
-               -H "Accept: application/vnd.github.v3+json" \
-               'https://api.github.com/repos/CDCgov/cfa-config-generator/actions/artifacts/${{ steps.upload-artifacts.outputs.artifact-id }}/zip' -o artifact.zip
-
-          echo "Unzipping download"
-          unzip artifact.zip
-
-          echo "Unzipping artifacts"
-          unzip ${{ steps.get-folder-name.outputs.target_dir }}.zip -d artifacts
-
-          echo "Login to Azure with NNH Service Principal"
-          az login --service-principal \
-            --username ${{ fromJSON(secrets.EDAV_CFA_PREDICT_NNHT_SP).clientId }} \
-            --password ${{ fromJSON(secrets.EDAV_CFA_PREDICT_NNHT_SP).clientSecret }} \
-            --tenant ${{ fromJSON(secrets.EDAV_CFA_PREDICT_NNHT_SP).tenantId }}
-
-          echo "Uploading config to Azure Blob"
-          az storage blob upload-batch \
-          --destination https://cfaazurebatchprd.blob.core.windows.net/rt-epinow2-config \
-          --source artifacts/
+              echo "Starting Job"
+              az containerapp job start \
+              --resource-group  "$RESOURCE_GROUP" \
+              --name "$JOB_NAME" \
+              --yaml $TEMPLATE && echo "Started Container App Job!"
+              # throw error if job fails
+              if [ $? -ne 0 ]; then
+                echo "Failed to start Container App Job!"
+                exit 1
+              fi

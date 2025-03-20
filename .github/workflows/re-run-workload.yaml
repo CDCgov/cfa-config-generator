@@ -21,34 +21,75 @@ on:
         description: 'Output container in Azure (default: nssp-rt-testing)'
 
 jobs:
+  build-and-push:
+    uses: ./.github/workflows/build-and-push.yaml
+    secrets: inherit
+
   run-workload:
-    runs-on: cfa-cdcgov
+    needs: build-and-push
+    runs-on: ubuntu-latest
     environment: production
     steps:
-    - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Install uv
-      uses: astral-sh/setup-uv@v5
-      with:
-        enable-cache: true
+      - name: Extract branch name
+        shell: bash
+        run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
+        id: branch-name
 
-    - name: "Set up Python"
-      uses: actions/setup-python@v5
-      with:
-        python-version-file: ".python-version"
+      - name: Figure out tag (either latest if it is main or the branch name)
+        shell: bash
+        id: image-tag
+        run: |
+          if [ "${{ steps.branch-name.outputs.branch }}" = "${{ env.MAIN_BRANCH_NAME }}" ]; then
+            echo "tag=${{ env.MAIN_BRANCH_NAME }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${{ steps.branch-name.outputs.branch }}" >> $GITHUB_OUTPUT
+          fi
 
-    - name: Azure Service Principal CLI login
-      uses: azure/login@v2
-      with:
-        creds: ${{ secrets.EDAV_CFA_PREDICT_NNHT_SP }}
+      - name: Build Docker Image String
+        id: image-name
+        run: echo "image_name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.image-tag.outputs.tag }}" >> $GITHUB_OUTPUT
 
-    - name: Execute workload script
-      run: |
-        reference_dates=${{ inputs.reference_dates }} \
-        report_date=${{ inputs.report_date }} \
-        data_container=${{ inputs.data_container }} \
-        production_date=${{ inputs.production_date }} \
-        job_id=${{ inputs.job_id }} \
-        output_container=${{ inputs.output_container }} \
-        data_exclusions_path=${{ inputs.data_exclusions_path }} \
-          uv run python pipelines/epinow2/generate_rerun_config.py
+      - name: Trigger Container App Job
+        uses: CDCgov/cfa-actions/runner-action@v1.3.0
+        with:
+          github_app_id: ${{ secrets.CDCENT_ACTOR_APP_ID }}
+          github_app_pem: ${{ secrets.CDCENT_ACTOR_APP_PEM }}
+          wait_for_completion: true
+          print_logs: true
+          script: |
+            JOB_NAME='cfa-config-generator'
+            RESOURCE_GROUP='ext-edav-cfa-prd'
+            TEMPLATE='job-template.yaml'
+
+            echo "Getting Existing Job Template"
+            az containerapp job show \
+              --name "$JOB_NAME" \
+              --resource-group "$RESOURCE_GROUP" \
+              --query "properties.template" \
+              --output yaml > $TEMPLATE
+
+              echo "Updating Job Template"
+              yq -i '.containers[0].image = "${{ steps.image-name.outputs.image_name }}"' $TEMPLATE
+              yq -i '.containers[0].env += { "name": "reference_dates", "value": "${{ inputs.reference_dates }}" }' $TEMPLATE
+              yq -i '.containers[0].env += { "name": "report_date", "value": "${{ inputs.report_date }}" }' $TEMPLATE
+              yq -i '.containers[0].env += { "name": "data_container", "value": "${{ inputs.data_container }}" }' $TEMPLATE
+              yq -i '.containers[0].env += { "name": "production_date", "value": "${{ inputs.production_date }}" }' $TEMPLATE
+              yq -i '.containers[0].env += { "name": "job_id", "value": "${{ inputs.job_id }}" }' $TEMPLATE
+              yq -i '.containers[0].env += { "name": "output_container", "value": "${{ inputs.output_container }}" }' $TEMPLATE
+              yq -i '.containers[0].env += { "name": "data_exclusions_path", "value": "${{ inputs.data_exclusions_path }}" }' $TEMPLATE
+              yq -i '.containers[0].command = [ "uv", "run", "python", "pipelines/epinow2/generate_rerun_config.py" ]' $TEMPLATE
+              cat $TEMPLATE
+
+              echo "Starting Job"
+              az containerapp job start \
+              --resource-group  "$RESOURCE_GROUP" \
+              --name "$JOB_NAME" \
+              --yaml $TEMPLATE && echo "Started Container App Job!"
+              # throw error if job fails
+              if [ $? -ne 0 ]; then
+                echo "Failed to start Container App Job!"
+                exit 1
+              fi

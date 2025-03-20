@@ -1,0 +1,79 @@
+name: build-and-push
+description: Build the container and push it to ACR
+
+on:
+  push:
+
+env:
+  # Together, these form: cfaprdbatchcr.azurecr.io/cfa-config-generator
+  REGISTRY: cfaprdbatchcr.azurecr.io/
+  IMAGE_NAME: cfa-config-generator
+  MAIN_BRANCH_NAME: main
+
+jobs:
+
+  build-and-push:
+    runs-on: ubuntu-latest
+    name: Build pipeline image
+
+    outputs:
+      tag: ${{ steps.image-tag.outputs.tag }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract branch name
+        shell: bash
+        run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
+        id: branch-name
+
+      - name: Figure out tag (either latest if it is main or the branch name)
+        shell: bash
+        id: image-tag
+        run: |
+          if [ "${{ steps.branch-name.outputs.branch }}" = "${{ env.MAIN_BRANCH_NAME }}" ]; then
+            echo "tag=${{ env.MAIN_BRANCH_NAME }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${{ steps.branch-name.outputs.branch }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Docker Login
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker build and push
+        run: |
+          chmod +x $GITHUB_WORKSPACE/.github/scripts/docker_build_and_push.sh
+          $GITHUB_WORKSPACE/.github/scripts/docker_build_and_push.sh ${{ env.IMAGE_NAME }} ${{ steps.image-tag.outputs.tag }}
+
+      - name: Copy from GHCR to ACR
+        uses: CDCgov/cfa-actions/runner-action@v1.3.0
+        with:
+          github_app_id: ${{ secrets.CDCENT_ACTOR_APP_ID }}
+          github_app_pem: ${{ secrets.CDCENT_ACTOR_APP_PEM }}
+          wait_for_completion: true
+          print_logs: true
+          script: |
+            echo "Login to Azure with NNH Service Principal"
+            az login --service-principal \
+              --username ${{ fromJSON(secrets.EDAV_CFA_PREDICT_NNHT_SP).clientId }} \
+              --password ${{ fromJSON(secrets.EDAV_CFA_PREDICT_NNHT_SP).clientSecret }} \
+              --tenant ${{ fromJSON(secrets.EDAV_CFA_PREDICT_NNHT_SP).tenantId }}
+
+            echo "Copying image from GHCR to ACR"
+            IMAGE_TAG=${{ env.IMAGE_NAME }}:${{ needs.build-pipeline-image.outputs.tag }}
+            az acr import --name ${{ env.REGISTRY }} \
+              --source "ghcr.io/cdcent/$IMAGE_TAG" \
+              --username ${{ github.actor }} \
+              --password ${{ secrets.GITHUB_TOKEN }} \
+              --image "$IMAGE_TAG" \
+              --force && echo "Copied image!"
+            # throw error if job fails
+            if [ $? -ne 0 ]; then
+              echo "Failed to copy image"
+              exit 1
+            fi
