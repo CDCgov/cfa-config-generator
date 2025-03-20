@@ -65,7 +65,7 @@ jobs:
               --tenant ${{ fromJSON(secrets.EDAV_CFA_PREDICT_NNHT_SP).tenantId }}
 
             echo "Copying image from GHCR to ACR"
-            IMAGE_TAG=${{ env.IMAGE_NAME }}:${{ needs.build-pipeline-image.outputs.tag }}
+            IMAGE_TAG=${{ env.IMAGE_NAME }}:${{ steps.image-tag.outputs.tag }}
             az acr import --name ${{ env.REGISTRY }} \
               --source "ghcr.io/cdcgov/$IMAGE_TAG" \
               --username ${{ github.actor }} \
