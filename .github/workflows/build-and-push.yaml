@@ -3,6 +3,7 @@ description: Build the container and push it to ACR
 
 on:
   push:
+  workflow_call:
 
 env:
   # Together, these form: cfaprdbatchcr.azurecr.io/cfa-config-generator
