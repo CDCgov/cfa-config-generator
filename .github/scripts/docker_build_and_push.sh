@@ -1,4 +1,4 @@
-IMAGE="ghcr.io/cdcent/$1"
+IMAGE="ghcr.io/cdcgov/$1"
 TAG=$2
 BUILDER=docker-container-driver-builder
 
