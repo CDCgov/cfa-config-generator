@@ -47,7 +47,7 @@ if __name__ == "__main__":
     # because in the general case, we don't need to know about the data_exclusions file,
     # so that is only handled in this script.
     excl_path: str | None = os.getenv("data_exclusions_path")
-    if excl_path is None:
+    if (excl_path is None) or (excl_path == ""):
         # Set the default to the standard production location, with this report date.
         # Make sure we have a properly formatted date.
         rd: date = (
@@ -55,7 +55,7 @@ if __name__ == "__main__":
             if isinstance(user_args["report_date"], str)
             else user_args["report_date"]
         )
-        excl_path = f"az://nssp-rt-v2/outliers/{rd.isoformat()}.csv"
+        excl_path = azure_storage["outliers_blob_path"].format(rd.isoformat())
 
     # The desired schema for the data_exclusions file
     schema = pl.Schema(

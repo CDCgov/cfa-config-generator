@@ -79,6 +79,7 @@ azure_storage = {
     "azure_storage_account_url": "https://cfaazurebatchprd.blob.core.windows.net/",
     "azure_container_name": "rt-epinow2-config",
     "scope_url": "https://cfaazurebatchprd.blob.core.windows.net/.default",
+    "outliers_blob_path": "nssp-rt-v2/outliers/{}.csv",
 }
 
 modifiable_params = [
