@@ -88,6 +88,7 @@ if __name__ == "__main__":
             container_client=ctr_client, blob_name=path_in_blob, schema_overrides=schema
         ).select(["state", "disease", "report_date", "reference_date"])
     else:
+        print(f"{excl_path=}")
         exclusions: pl.DataFrame = pl.read_csv(
             excl_path, schema_overrides=schema
         ).select(["state", "disease", "report_date", "reference_date"])
