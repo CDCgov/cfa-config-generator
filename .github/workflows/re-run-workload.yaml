@@ -60,7 +60,7 @@ jobs:
         with:
           script: |
             const coredemo = require('@actions/core')
-            let id_token = await coredemo.getIDToken()
+            const id_token = await coredemo.getIDToken('api://AzureADTokenExchange')
             coredemo.setOutput('id_token', id_token)
 
       - name: Trigger Container App Job
