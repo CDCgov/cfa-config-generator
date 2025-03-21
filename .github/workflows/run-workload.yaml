@@ -2,9 +2,6 @@ name: run-workload
 description: Run a workload to create a new modeling job and associated task configs.
 
 on:
-  push: #TODO: remove this!
-    branches:
-      - gio-runner-migration
   workflow_dispatch:
     inputs:
       state:
@@ -34,10 +31,16 @@ env:
 
 jobs:
   build-and-push:
+    permissions:
+      id-token: write # This is required for requesting the JWT
+      contents: read  # This is required for actions/checkout
     uses: ./.github/workflows/build-and-push.yaml
     secrets: inherit
 
   run-workload:
+    permissions:
+      id-token: write # This is required for requesting the JWT
+      contents: read  # This is required for actions/checkout
     needs: build-and-push
     runs-on: ubuntu-latest
     environment: production

@@ -22,10 +22,16 @@ on:
 
 jobs:
   build-and-push:
+    permissions:
+      id-token: write # This is required for requesting the JWT
+      contents: read  # This is required for actions/checkout
     uses: ./.github/workflows/build-and-push.yaml
     secrets: inherit
 
   run-workload:
+    permissions:
+      id-token: write # This is required for requesting the JWT
+      contents: read  # This is required for actions/checkout
     needs: build-and-push
     runs-on: ubuntu-latest
     environment: production
