@@ -84,6 +84,7 @@ jobs:
           print_logs: true
           script: |
             echo "Login to Azure with NNH Service Principal"
+            az cloud set -n azurecloud
             az login --service-principal \
               --username ${{ fromJSON(secrets.EDAV_CFA_PREDICT_NNHT_SP).clientId }} \
               --tenant ${{ fromJSON(secrets.EDAV_CFA_PREDICT_NNHT_SP).tenantId }} \
