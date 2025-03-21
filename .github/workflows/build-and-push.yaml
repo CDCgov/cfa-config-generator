@@ -72,7 +72,7 @@ jobs:
           script: |
             const coredemo = require('@actions/core')
             const audience = core.getInput('audience', { required: false });
-            const id_token = await coredemo.getIDToken(audience)
+            const id_token = await coredemo.getIDToken('api://AzureADTokenExchange')
             coredemo.setOutput('id_token', id_token)
 
       - name: Copy from GHCR to ACR
