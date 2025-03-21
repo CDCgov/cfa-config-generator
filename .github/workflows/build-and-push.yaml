@@ -29,6 +29,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Azure login with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ fromJSON(secrets.EDAV_CFA_PREDICT_NNHT_SP).clientId }}
+          tenant-id: ${{ fromJSON(secrets.EDAV_CFA_PREDICT_NNHT_SP).tenantId }}
+          subscription-id: ${{ fromJSON(secrets.EDAV_CFA_PREDICT_NNHT_SP).subscriptionId }}
+
       - name: Extract branch name
         shell: bash
         run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
