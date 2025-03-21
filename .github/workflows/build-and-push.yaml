@@ -20,6 +20,7 @@ jobs:
       packages: write # This is required to push to GHCR
     runs-on: ubuntu-latest
     name: Build pipeline image
+    environment: production
 
     outputs:
       tag: ${{ steps.image-tag.outputs.tag }}
