@@ -85,8 +85,8 @@ jobs:
           script: |
             echo "Logging into Azure CLI"
             az login --output none --service-principal \
-              --username ${{ fromJSON(secrets.EDAV_CFA_PREDICT_NNHT_SP).clientId }} \
-              --tenant ${{ fromJSON(secrets.EDAV_CFA_PREDICT_NNHT_SP).tenantId }} \
+              --username ${{ secrets.EDAV_CFA_PREDICT_NNHT_SP_CLIENT_ID }} \
+              --tenant ${{ secrets.AZ_TENANT_ID }} \
               --federated-token ${{ steps.idtoken.outputs.id_token }}
 
             JOB_NAME='cfa-config-generator'

@@ -8,4 +8,3 @@ COPY ./src  ./src
 COPY ./pipelines ./pipelines/
 
 ENTRYPOINT ["sh"]
-# ENTRYPOINT [ "uv", "run", "python", "pipelines/epinow2/generate_config_local.py" ]
