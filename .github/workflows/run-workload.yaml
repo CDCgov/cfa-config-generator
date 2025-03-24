@@ -32,7 +32,7 @@ env:
 jobs:
   build-and-push:
     uses: ./.github/workflows/build-and-push.yaml
-    secrets: inherit
+    secrets: inherit # pragma: allowlist secret
 
   run-workload:
     permissions:
