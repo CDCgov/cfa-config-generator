@@ -70,13 +70,8 @@ jobs:
             --tenant ${{ secrets.AZ_TENANT_ID }} \
             --federated-token ${{ steps.idtoken.outputs.id_token }}
 
-          PYTHON_VERSION="$(cat .python-version)"
-          echo "Installing python $PYTHON_VERSION"
-          pyenv install "$PYTHON_VERSION"
-          pyenv local "$PYTHON_VERSION"
-
           echo "Installing uv"
-          pip install uv
+          curl -LsSf https://astral.sh/uv/install.sh | sh
 
           echo "Running workload"
           state=${{ inputs.state }} \
