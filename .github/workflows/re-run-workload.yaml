@@ -67,13 +67,9 @@ jobs:
             --tenant ${{ secrets.AZ_TENANT_ID }} \
             --federated-token ${{ steps.idtoken.outputs.id_token }}
 
-          PYTHON_VERSION="$(cat .python-version)"
-          echo "Installing python $PYTHON_VERSION"
-          pyenv install "$PYTHON_VERSION"
-          pyenv local "$PYTHON_VERSION"
-
           echo "Installing uv"
-          pip install uv
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          source $HOME/.local/bin/env
 
           reference_dates=${{ inputs.reference_dates }} \
           report_date=${{ inputs.report_date }} \
