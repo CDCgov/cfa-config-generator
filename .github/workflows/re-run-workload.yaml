@@ -8,7 +8,7 @@ on:
       report_date:
         description: 'Report date (default: today; format: YYYY-MM-DD)'
       data_exclusions_path:
-        description: 'The path to the data exclusion CSV file. If in Blob, use form `az://<container-name>/<path>` (default: `az://nssp-rt-v2/outliers/<report_date>.csv`)'
+        description: 'The path to the data exclusion CSV file. If in Blob, use form `az://<container-name>/<path>` (default: `az://nssp-etl/outliers-v2/<report_date>.csv`)'
       reference_dates:
         description: 'Reference dates (default: [8 weeks before, 1 day before] report date; format: YYYY-MM-DD, YYYY-MM-DD)'
       data_container:
