@@ -1,4 +1,5 @@
 import json
+import re
 
 import polars as pl
 from azure.identity import DefaultAzureCredential
@@ -30,6 +31,32 @@ def instantiate_blob_service_client(
 
     return blob_service_client
 
+def get_date_from_job_id(file_names: list | None = None) -> list:
+    """Function to extract dates from a list of job IDs.
+    Args:
+        job_list (list): List of blobs from Azure Storage.
+    Returns:
+        list: List of unique job IDs.
+    """
+    from datetime import datetime
+    
+    remove_str = "Rt-estimation-"
+
+    pattern_yyyy_mm_dd = r'\b(\d{4}-\d{2}-\d{2})\b'
+    pattern_yyyyMMdd = r'\b(\d{8})\b'
+    # Extract dates
+    extracted_dates = []
+    for file_name in file_names:    
+        match_mm_dd = re.search(pattern_yyyy_mm_dd, file_name)    
+        match_yyyyMMdd = re.search(pattern_yyyyMMdd, file_name)    
+        if match_mm_dd:        
+            extracted_dates.append(match_mm_dd.group(1))    
+        elif match_yyyyMMdd:        
+            extracted_dates.append(match_yyyyMMdd.group(1))
+            # Print the extracted dates
+            
+    for date in extracted_dates:    
+        print(date)
 
 def get_unique_jobs_from_blobs(blob_list: list | None = None) -> list:
     """Function to extract unique job IDs from a list of blobs.
