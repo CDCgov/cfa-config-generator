@@ -17,7 +17,7 @@ from cfa_config_generator.utils.azure.storage import (
 from cfa_config_generator.utils.cli.functions import (
     update_config,
     update_config_bulk,
-) 
+)
 from cfa_config_generator.utils.epinow2.constants import (
     azure_storage,
     modifiable_params,
