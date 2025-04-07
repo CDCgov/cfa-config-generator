@@ -62,7 +62,9 @@ def get_date_from_job_id(file_names: list | None = None) -> dict:
             extracted_dates[file_name] = ""
 
     # Sort the dictionary by date (most recent first)
-    return OrderedDict(sorted(extracted_dates.items(), key=lambda item: item[1], reverse=True))
+    return OrderedDict(
+        sorted(extracted_dates.items(), key=lambda item: item[1], reverse=True)
+    )
 
 
 def get_unique_jobs_from_blobs(blob_list: list | None = None) -> list:
