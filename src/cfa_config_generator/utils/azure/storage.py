@@ -1,4 +1,6 @@
 import json
+import re
+from collections import OrderedDict
 
 import polars as pl
 from azure.identity import DefaultAzureCredential
@@ -29,6 +31,40 @@ def instantiate_blob_service_client(
     blob_service_client = BlobServiceClient(account_url, credential=sp_credential)
 
     return blob_service_client
+
+
+def get_date_from_job_id(file_names: list | None = None) -> dict:
+    """Function to extract dates from a list of job IDs.
+    Args:
+        job_list (list): List of blobs from Azure Storage.
+    Returns:
+        dict: A dictionary where the keys are the file names, and the values are the dates (in string form).
+        If a date could not be determined for a given file, it gets an empty string: `""`
+    """
+
+    pattern_yyyy_mm_dd = r"\b\d{4}-\d{2}-\d{2}"
+    pattern_yyyyMMdd = r"\b(\d{8})"
+
+    # Extract dates
+    extracted_dates = OrderedDict()
+    for file_name in file_names:
+        match_mm_dd = re.search(pattern_yyyy_mm_dd, file_name)
+        match_yyyyMMdd = re.search(pattern_yyyyMMdd, file_name)
+        if match_mm_dd:
+            extracted_dates[file_name] = match_mm_dd.group(0)
+        elif match_yyyyMMdd:
+            str_match = match_yyyyMMdd.group(0)
+            year = str_match[:4]
+            month = str_match[4:6]
+            day = str_match[6:]
+            extracted_dates[file_name] = f"{year}-{month}-{day}"
+        else:
+            extracted_dates[file_name] = ""
+
+    # Sort the dictionary by date (most recent first)
+    return OrderedDict(
+        sorted(extracted_dates.items(), key=lambda item: item[1], reverse=True)
+    )
 
 
 def get_unique_jobs_from_blobs(blob_list: list | None = None) -> list:

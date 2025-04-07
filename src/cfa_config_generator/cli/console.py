@@ -9,6 +9,7 @@ from typing_extensions import Annotated
 from cfa_config_generator.utils.azure.auth import obtain_sp_credential
 from cfa_config_generator.utils.azure.storage import (
     download_blob,
+    get_date_from_job_id,
     get_tasks_for_job_id,
     get_unique_jobs_from_blobs,
     instantiate_blob_service_client,
@@ -69,7 +70,8 @@ def list_jobs(
             container_client = blob_service_client.get_container_client(container_name)
             blob_list = container_client.list_blobs()
             unique_jobs = get_unique_jobs_from_blobs(blob_list=blob_list)
-            console.print(unique_jobs[0:num_jobs])
+            unique_jobs_dates = get_date_from_job_id(file_names=unique_jobs)
+            console.print(list(unique_jobs_dates.keys())[0:num_jobs])
         except (ValueError, ResourceNotFoundError, ClientAuthenticationError) as e:
             console.print(
                 "[italic red] :triangular_flag: Error instantiating blob client or finding specified resource."
