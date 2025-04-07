@@ -37,7 +37,7 @@ def get_date_from_job_id(file_names: list | None = None) -> dict:
     Args:
         job_list (list): List of blobs from Azure Storage.
     Returns:
-        list: List of unique job IDs.
+        dict: A sorted dictionary mapping file names to dates.
     """
 
     pattern_yyyy_mm_dd = r"\b\d{4}-\d{2}-\d{2}"
