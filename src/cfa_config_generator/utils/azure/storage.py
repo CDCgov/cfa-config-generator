@@ -51,16 +51,16 @@ def get_date_from_job_id(file_names: list | None = None) -> dict:
         match_mm_dd = re.search(pattern_yyyy_mm_dd, file_name)
         match_yyyyMMdd = re.search(pattern_yyyyMMdd, file_name)
         if match_mm_dd:
-            extracted_dates[file_name]=match_mm_dd.group(0)
+            extracted_dates[file_name] = match_mm_dd.group(0)
         elif match_yyyyMMdd:
             str_match = match_yyyyMMdd.group(0)
             year = str_match[:4]
             month = str_match[4:6]
             day = str_match[6:]
-            extracted_dates[file_name]=f"{year}-{month}-{day}"
+            extracted_dates[file_name] = f"{year}-{month}-{day}"
         else:
-            extracted_dates[file_name]=""
-    
+            extracted_dates[file_name] = ""
+
     # Sort the dictionary by date (most recent first)
     return dict(sorted(extracted_dates.items(), key=lambda item: item[1], reverse=True))
 
