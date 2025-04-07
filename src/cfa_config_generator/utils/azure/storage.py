@@ -1,5 +1,6 @@
 import json
 import re
+from collections import OrderedDict
 
 import polars as pl
 from azure.identity import DefaultAzureCredential
@@ -45,8 +46,7 @@ def get_date_from_job_id(file_names: list | None = None) -> dict:
     pattern_yyyyMMdd = r"\b(\d{8})"
 
     # Extract dates
-    # extracted_dates = dict[str, str] = dict()
-    extracted_dates = dict()
+    extracted_dates = OrderedDict()
     for file_name in file_names:
         match_mm_dd = re.search(pattern_yyyy_mm_dd, file_name)
         match_yyyyMMdd = re.search(pattern_yyyyMMdd, file_name)
@@ -62,7 +62,7 @@ def get_date_from_job_id(file_names: list | None = None) -> dict:
             extracted_dates[file_name] = ""
 
     # Sort the dictionary by date (most recent first)
-    return dict(sorted(extracted_dates.items(), key=lambda item: item[1], reverse=True))
+    return OrderedDict(sorted(extracted_dates.items(), key=lambda item: item[1], reverse=True))
 
 
 def get_unique_jobs_from_blobs(blob_list: list | None = None) -> list:
