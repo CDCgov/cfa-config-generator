@@ -33,7 +33,7 @@ def generate_config():
     will be invoked either by 1) a scheduled GH action using
     default values, or 2) a user-triggered workflow with supplied
     state, pathogen, report_date, and reference_date parameters.
-    This script is the entrypoint to the workflow that generates
+    This function is the entrypoint to the workflow that generates
     configuration objects, validates them against a schema, and
     writes them to Blob Storage.
     """
