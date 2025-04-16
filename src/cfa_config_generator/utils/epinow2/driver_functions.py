@@ -109,12 +109,14 @@ def generate_rerun_config():
         excl_path = azure_storage["outliers_blob_path"].format(rd.isoformat())
 
     # The desired schema for the data_exclusions file
-    schema = pl.Schema([
-        ("state", pl.String),
-        ("disease", pl.String),
-        ("report_date", pl.Date),
-        ("reference_date", pl.Date),
-    ])
+    schema = pl.Schema(
+        [
+            ("state", pl.String),
+            ("disease", pl.String),
+            ("report_date", pl.Date),
+            ("reference_date", pl.Date),
+        ]
+    )
 
     try:
         sp_credential = obtain_sp_credential()
