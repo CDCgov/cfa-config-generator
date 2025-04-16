@@ -144,9 +144,11 @@ def generate_rerun_config():
         ).select(["state", "disease", "report_date", "reference_date"])
 
     # Validate the file path exists and has the proper columns
+    # Extract a list of the states with excluded data points
+    # Only generate configs and rerun for these states
     task_excl_str: str = generate_tasks_excl_from_data_excl(excl_df=exclusions)
 
-    # Update task_Exclusions argument
+    # Update task_Exclusions argument so that we only rerun for states with data modifications
     user_args["task_exclusions"] = task_excl_str
 
     # Add the path to the data exclusions file to the user_args
