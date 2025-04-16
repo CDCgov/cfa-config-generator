@@ -1,6 +1,7 @@
 import itertools
 import os
 from datetime import date, datetime, timedelta, timezone
+from typing import Any
 from uuid import UUID, uuid1
 
 import polars as pl
@@ -13,7 +14,7 @@ from cfa_config_generator.utils.epinow2.constants import (
 )
 
 
-def extract_user_args(as_of_date: str) -> dict:
+def extract_user_args(as_of_date: str) -> dict[str, Any]:
     """Extracts user-provided arguments from environment variables or uses default if none provided.
     Parameters:
         as_of_date: iso format timestamp of model run
