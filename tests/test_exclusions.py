@@ -38,14 +38,21 @@ def test_exclusions():
     default_args = {
         "state": "all",
         "disease": "all",
+        # Pass date object
         "report_date": report_date,
+        # Pass list[date]
         "reference_dates": [min_reference_date, max_reference_date],
-        "data_path": "gold/",
+        "data_path": f"gold/{report_date.isoformat()}.parquet",
         "data_container": None,
+        # Pass date object
         "production_date": production_date,
         "job_id": "test-job-id",
         "as_of_date": as_of_date,
         "task_exclusions": task_exclusions,
+        # Added for validation
+        "output_container": "test-container",
+        # Added for validation
+        "exclusions": None,
     }
     validated_args = validate_args(**default_args)
     task_configs, _ = generate_task_configs(**validated_args)
@@ -65,14 +72,21 @@ def test_single_exclusion():
     default_args = {
         "state": "all",
         "disease": "all",
+        # Pass date object
         "report_date": report_date,
+        # Pass list[date]
         "reference_dates": [min_reference_date, max_reference_date],
-        "data_path": "gold/",
+        "data_path": f"gold/{report_date.isoformat()}.parquet",
         "data_container": None,
+        # Pass date object
         "production_date": production_date,
         "job_id": "test-job-id",
         "as_of_date": as_of_date,
         "task_exclusions": task_exclusions,
+        # Added for validation
+        "output_container": "test-container",
+        # Added for validation
+        "exclusions": None,
     }
     validated_args = validate_args(**default_args)
     task_configs, _ = generate_task_configs(**validated_args)
@@ -92,14 +106,21 @@ def test_task_exclusion():
     default_args = {
         "state": "ID",
         "disease": "COVID-19",
+        # Pass date object
         "report_date": report_date,
+        # Pass list[date]
         "reference_dates": [min_reference_date, max_reference_date],
-        "data_path": "gold/",
+        "data_path": f"gold/{report_date.isoformat()}.parquet",
         "data_container": None,
+        # Pass date object
         "production_date": production_date,
         "job_id": "test-job-id",
         "as_of_date": as_of_date,
         "task_exclusions": task_exclusions,
+        # Added for validation
+        "output_container": "test-container",
+        # Added for validation
+        "exclusions": None,
     }
     validated_args = validate_args(**default_args)
     task_configs, _ = generate_task_configs(**validated_args)
@@ -118,14 +139,25 @@ def test_data_exclusion(good_config):
     default_args = {
         "state": "all",
         "disease": "all",
+        # Pass date object
         "report_date": report_date,
+        # Pass list[date]
         "reference_dates": [min_reference_date, max_reference_date],
+        # Added data_path
+        "data_path": f"gold/{report_date.isoformat()}.parquet",
         "data_container": None,
+        # Pass date object
         "production_date": production_date,
         "job_id": "test-job-id",
         "as_of_date": as_of_date,
         "task_exclusions": None,
-        "exclusions": "tests/test_exclusions_passes.csv",
+        # Pass dict
+        "exclusions": {
+            "path": "tests/test_exclusions_passes.csv",
+            "blob_storage_container": None,
+        },
+        # Added for validation
+        "output_container": "test-container",
     }
 
     task_excl_str = generate_tasks_excl_from_data_excl(

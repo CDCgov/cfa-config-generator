@@ -1,8 +1,6 @@
 import json
 import logging
-import os
 from datetime import date
-from typing import Any
 
 import polars as pl
 from azure.identity._credentials.azure_cli import AzureCliCredential
@@ -17,37 +15,65 @@ from cfa_config_generator.utils.azure.storage import (
 )
 from cfa_config_generator.utils.epinow2.constants import azure_storage
 from cfa_config_generator.utils.epinow2.functions import (
-    extract_user_args,
     generate_task_configs,
     generate_tasks_excl_from_data_excl,
-    generate_timestamp,
     validate_args,
 )
 
 logger = logging.getLogger(__name__)
 
 
-def generate_config():
+def generate_config(
+    state: str,
+    disease: str,
+    report_date: date,
+    reference_dates: list[date],
+    data_path: str,
+    data_container: str,
+    production_date: date,
+    job_id: str,
+    as_of_date: str,
+    output_container: str,
+    task_exclusions: str | None = None,
+    exclusions: str | None = None,
+):
     """
-    A function to generate `epinow2` configuration objects. This
-    will be invoked either by 1) a scheduled GH action using
-    default values, or 2) a user-triggered workflow with supplied
-    state, pathogen, report_date, and reference_date parameters.
-    This function is the entrypoint to the workflow that generates
-    configuration objects, validates them against a schema, and
-    writes them to Blob Storage.
+    A function to generate `epinow2` configuration objects based on provided arguments.
+    This function validates the arguments, generates configuration objects,
+    and writes them to Blob Storage.
+
+    Parameters:
+        state: geography to run model
+        disease: disease to run
+        report_date: date of model run
+        reference_dates: list of reference (event) dates
+        data_path: path to input data
+        data_container: container for input data
+        production_date: production date of model run
+        job_id: unique identifier for job
+        as_of_date: iso format timestamp of model run
+        output_container: Azure container to store output
+        task_exclusions: state:disease pair to exclude from model run
+        exclusions: path to exclusions csv
     """
-    # Generate job-specific parameters
-    as_of_date: str = generate_timestamp()
-
-    # Pull run parameters from environment
-    user_args: dict[str, Any] = extract_user_args(as_of_date=as_of_date)
-
-    # Validate and sanitize args
-    sanitized_args = validate_args(**user_args)
+    # Validate and sanitize args directly
+    sanitized_args = validate_args(
+        state=state,
+        disease=disease,
+        report_date=report_date,
+        reference_dates=reference_dates,
+        data_path=data_path,
+        data_container=data_container,
+        production_date=production_date,
+        job_id=job_id,
+        as_of_date=as_of_date,
+        output_container=output_container,
+        task_exclusions=task_exclusions,
+        exclusions=exclusions,
+    )
 
     # Generate task-specific configs
-    task_configs, job_id = generate_task_configs(**sanitized_args)
+    task_configs, generated_job_id = generate_task_configs(**sanitized_args)
 
     # Push task configs to Azure Blob Storage
     try:
@@ -60,53 +86,68 @@ def generate_config():
             container=azure_storage["azure_container_name"]
         )
         for task in task_configs:
-            blob_name = f"{job_id}/{task['task_id']}.json"
+            blob_name = f"{generated_job_id}/{task['task_id']}.json"
             container_client.upload_blob(
                 name=blob_name,
                 data=json.dumps(task, indent=2),
                 overwrite=True,
+                content_settings=ContentSettings(content_type="application/json"),
             )
-    except (LookupError, ValueError) as e:
+    except (LookupError, ValueError, Exception) as e:
         logger.error(f"Error pushing to Azure: {e}")
         raise e
 
     logger.info(
-        f"Successfully generated configs for job; tasks stored in {job_id} directory."
+        f"Successfully generated configs for job; tasks stored in {generated_job_id} directory."
     )
 
 
-def generate_rerun_config():
+def generate_rerun_config(
+    state: str,
+    disease: str,
+    report_date: date,
+    reference_dates: list[date],
+    data_path: str,
+    data_container: str,
+    production_date: date,
+    job_id: str,
+    as_of_date: str,
+    output_container: str,
+    data_exclusions_path: str | None = None,
+    task_exclusions: str | None = None,
+    exclusions: str | None = None,
+):
     """
-    A function to generate `epinow2` configuration objects. This
-    will be invoked either by a user-triggered workflow with
-    a supplied data_exclusions_path parameter.
-    The .csv file located at the data_exclusions_path location
-    should have columns of `state`, `disease`, `report_date`, `reference_date`.
-    If the file is Azure Blob Storage, the path should be of the form
-    `az://<container_name>/<blob_name>`.
-    This function is the entrypoint to the workflow that generates
-    configuration objects, validates them against a schema, and
-    writes them to Blob Storage.
+    A function to generate `epinow2` configuration objects for re-running tasks
+    based on a data exclusions file.
+
+    This function reads a data exclusion file, determines which tasks need to be re-run,
+    generates configuration objects for those tasks, validates them, and writes them
+    to Blob Storage.
+
+    Parameters:
+        state: geography to run model
+        disease: disease to run
+        report_date: date of model run
+        reference_dates: list of reference (event) dates
+        data_path: path to input data
+        data_container: container for input data
+        production_date: production date of model run
+        job_id: unique identifier for job
+        as_of_date: iso format timestamp of model run
+        output_container: Azure container to store output
+        data_exclusions_path: Path to the data exclusion CSV file. If in Blob, use form `az://<container-name>/<path>`.
+                              Defaults to `az://nssp-etl/outliers-v2/<report_date>.csv` if None or empty.
+        task_exclusions: state:disease pair to exclude from model run (will be overwritten by data exclusions)
+        exclusions: path to exclusions csv (will be overwritten by data exclusions path info)
     """
-    # Generate job-specific parameters
-    as_of_date = generate_timestamp()
-
-    # Pull run parameters from environment
-    user_args: dict[str, Any] = extract_user_args(as_of_date=as_of_date)
-
-    # Pull the data_exclusions file path from the env vars. It it not in the user_args,
-    # because in the general case, we don't need to know about the data_exclusions file,
-    # so that is only handled in this script.
-    excl_path: str | None = os.getenv("data_exclusions_path")
+    # Handle default data_exclusions_path
+    excl_path = data_exclusions_path
     if (excl_path is None) or (excl_path == ""):
-        # Set the default to the standard production location, with this report date.
-        # Make sure we have a properly formatted date.
-        rd: date = (
-            date.fromisoformat(user_args["report_date"])
-            if isinstance(user_args["report_date"], str)
-            else user_args["report_date"]
-        )
+        # Use the provided date object directly
+        rd: date = report_date
         excl_path = azure_storage["outliers_blob_path"].format(rd.isoformat())
+        logger.info(f"data_exclusions_path not provided, defaulting to: {excl_path}")
 
     # The desired schema for the data_exclusions file
     schema = pl.Schema(
@@ -129,41 +170,71 @@ def generate_rerun_config():
         raise e
 
     # Download (if necessary) and read the data_exclusions file
+    path_in_blob = None
+    container_name = None
     if excl_path.startswith("az://"):
-        # Extract container name and blob name from the path
-        container_name, path_in_blob = prep_blob_path(excl_path)
-        ctr_client: ContainerClient = storage_client.get_container_client(
-            container_name
-        )
-        exclusions: pl.DataFrame = read_blob_csv(
-            container_client=ctr_client, blob_name=path_in_blob, schema_overrides=schema
-        ).select(["state", "disease", "report_date", "reference_date"])
+        try:
+            # Extract container name and blob name from the path
+            container_name, path_in_blob = prep_blob_path(excl_path)
+            ctr_client: ContainerClient = storage_client.get_container_client(
+                container_name
+            )
+            exclusions_df: pl.DataFrame = read_blob_csv(
+                container_client=ctr_client,
+                blob_name=path_in_blob,
+                schema_overrides=schema,
+            ).select(["state", "disease", "report_date", "reference_date"])
+        except Exception as e:
+            logger.error(
+                f"Error reading data exclusions from Azure Blob Storage ({excl_path}): {e}"
+            )
+            raise e
     else:
-        exclusions: pl.DataFrame = pl.read_csv(
-            excl_path, schema_overrides=schema
-        ).select(["state", "disease", "report_date", "reference_date"])
+        try:
+            exclusions_df: pl.DataFrame = pl.read_csv(
+                excl_path, schema_overrides=schema
+            ).select(["state", "disease", "report_date", "reference_date"])
+        except Exception as e:
+            logger.error(
+                f"Error reading data exclusions file from local path ({excl_path}): {e}"
+            )
+            raise e
 
-    # Validate the file path exists and has the proper columns
-    # Extract a list of the states with excluded data points
-    # Only generate configs and rerun for these states
-    task_excl_str: str = generate_tasks_excl_from_data_excl(excl_df=exclusions)
+    # Generate the task exclusion string based on the *inverse* of the exclusions file
+    # (i.e., we want to *exclude* tasks that are *not* in the file)
+    task_excl_str: str = generate_tasks_excl_from_data_excl(excl_df=exclusions_df)
 
-    # Update task_Exclusions argument so that we only rerun for states with data modifications
-    user_args["task_exclusions"] = task_excl_str
+    # Update task_Exclusions argument so that we only rerun for states/diseases with data modifications
+    # This overwrites the input task_exclusions if provided
+    current_task_exclusions = task_excl_str
 
     # Add the path to the data exclusions file to the user_args
     excl_field = (
         {"path": path_in_blob, "blob_storage_container": container_name}
-        if excl_path.startswith("az://")
+        if excl_path.startswith("az://") and path_in_blob and container_name
         else {"path": excl_path, "blob_storage_container": None}
     )
-    user_args["exclusions"] = excl_field
+    # This overwrites the input exclusions if provided
+    current_exclusions = excl_field
 
-    # Validate and sanitize args
-    sanitized_args = validate_args(**user_args)
+    # Validate and sanitize args directly
+    sanitized_args = validate_args(
+        state=state,
+        disease=disease,
+        report_date=report_date,
+        reference_dates=reference_dates,
+        data_path=data_path,
+        data_container=data_container,
+        production_date=production_date,
+        job_id=job_id,
+        as_of_date=as_of_date,
+        output_container=output_container,
+        task_exclusions=current_task_exclusions,
+        exclusions=current_exclusions,
+    )
 
     # Generate task-specific configs
-    task_configs, job_id = generate_task_configs(**sanitized_args)
+    task_configs, generated_job_id = generate_task_configs(**sanitized_args)
 
     # Push task configs to Azure Blob Storage
     try:
@@ -171,17 +242,17 @@ def generate_rerun_config():
             container=azure_storage["azure_container_name"]
         )
         for task in task_configs:
-            blob_name = f"{job_id}/{task['task_id']}.json"
+            blob_name = f"{generated_job_id}/{task['task_id']}.json"
             container_client.upload_blob(
                 name=blob_name,
                 data=json.dumps(task, indent=2),
                 overwrite=True,
                 content_settings=ContentSettings(content_type="application/json"),
             )
-    except (LookupError, ValueError) as e:
+    except (LookupError, ValueError, Exception) as e:
         logger.error(f"Error pushing to Azure: {e}")
         raise e
 
     logger.info(
-        f"Successfully generated configs for job; tasks stored in {job_id} directory."
+        f"Successfully generated configs for job; tasks stored in {generated_job_id} directory."
     )

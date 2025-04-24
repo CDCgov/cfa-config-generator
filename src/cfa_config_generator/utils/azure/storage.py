@@ -10,7 +10,7 @@ from cfa_config_generator.utils.epinow2.constants import azure_storage
 
 
 def instantiate_blob_service_client(
-    sp_credential: DefaultAzureCredential | None = None, account_url: str = ""
+    sp_credential: DefaultAzureCredential, account_url: str
 ) -> BlobServiceClient:
     """Function to instantiate blob service client to interact
     with Azure Storage.
@@ -24,10 +24,6 @@ def instantiate_blob_service_client(
         ValueError: If sp_credential is invalid or BlobServiceClient
         fails to instantiate.
     """
-
-    if not sp_credential:
-        raise ValueError("Service principal credential not provided.")
-
     blob_service_client = BlobServiceClient(account_url, credential=sp_credential)
 
     return blob_service_client
@@ -83,15 +79,17 @@ def get_unique_jobs_from_blobs(blob_list: list | None = None) -> list:
 
 
 def get_tasks_for_job_id(
+    job_id: str,
     blob_list: list | None = None,
-    job_id: str = "",
     state: str | None = None,
     disease: str | None = None,
 ) -> list:
     """Function to extract tasks for a specific job ID from a list of blobs.
     Args:
-        blob_list (list): List of blobs from Azure Storage.
         job_id (str): Job ID to filter tasks by.
+        blob_list (list): List of blobs from Azure Storage.
+        state (str | None): Optional state to filter tasks by.
+        disease (str | None): Optional disease to filter tasks by.
     Returns:
         list: List of tasks for the specified job ID.
     """
@@ -115,9 +113,7 @@ def get_tasks_for_job_id(
     return sorted(tasks_for_job)
 
 
-def download_blob(
-    blob_path: str = "", sp_credential: DefaultAzureCredential | None = None
-) -> dict:
+def download_blob(blob_path: str, sp_credential: DefaultAzureCredential) -> dict:
     """Function to download a blob from Azure Storage and return its contents in JSON format.
     Args:
         blob_path (str): Path to the blob to download.
@@ -186,9 +182,6 @@ def prep_blob_path(blob_path: str) -> tuple[str, str]:
         If the input path does not contain a container name and blob name.
         If the input path is empty.
     """
-    if not blob_path:
-        raise ValueError("Blob path is empty.")
-
     if not blob_path.startswith("az://"):
         raise ValueError(f"Blob path {blob_path} does not start with 'az://'.")
 

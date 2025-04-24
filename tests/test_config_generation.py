@@ -22,13 +22,22 @@ def test_default_config_set():
     default_args = {
         "state": "all",
         "disease": "all",
+        # Pass date object
         "report_date": report_date,
+        # Pass list[date]
         "reference_dates": [min_reference_date, max_reference_date],
-        "data_path": "gold/",
+        "data_path": f"gold/{report_date.isoformat()}.parquet",
         "data_container": None,
+        # Pass date object
         "production_date": production_date,
         "job_id": "test-job-id",
         "as_of_date": as_of_date,
+        # Added for validation
+        "output_container": "test-container",
+        # Added for validation
+        "exclusions": None,
+        # Added for validation
+        "task_exclusions": None,
     }
     validated_args = validate_args(**default_args)
 
@@ -50,13 +59,22 @@ def test_single_geo_disease_set():
     default_args = {
         "state": "CA",
         "disease": "Influenza",
+        # Pass date object
         "report_date": report_date,
+        # Pass list[date]
         "reference_dates": [min_reference_date, max_reference_date],
-        "data_path": "gold/",
+        "data_path": f"gold/{report_date.isoformat()}.parquet",
         "data_container": None,
+        # Pass date object
         "production_date": production_date,
         "job_id": "test-job-id",
         "as_of_date": as_of_date,
+        # Added for validation
+        "output_container": "test-container",
+        # Added for validation
+        "exclusions": None,
+        # Added for validation
+        "task_exclusions": None,
     }
     validated_args = validate_args(**default_args)
 
