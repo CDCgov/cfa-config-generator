@@ -249,7 +249,7 @@ def validate_args(
     if not all(isinstance(ref, date) for ref in reference_dates):
         raise ValueError("All elements in reference_dates must be date objects.")
     if len(reference_dates) != 2:
-        raise ValueError("reference_dates requires a list of two date objects.")
+        raise ValueError("reference_dates must contain exactly two date objects.")
     if not all(ref <= report_date for ref in reference_dates):
         raise ValueError(
             "Invalid reference_date. Ensure all reference_dates are on or before the report date."
