@@ -114,8 +114,6 @@ def generate_rerun_config(
     as_of_date: str,
     output_container: str,
     data_exclusions_path: str | None = None,
-    task_exclusions: str | None = None,
-    exclusions: str | None = None,
 ):
     """
     A function to generate `epinow2` configuration objects for re-running tasks
@@ -138,8 +136,6 @@ def generate_rerun_config(
         output_container: Azure container to store output
         data_exclusions_path: Path to the data exclusion CSV file. If in Blob, use form `az://<container-name>/<path>`.
                               Defaults to `az://nssp-etl/outliers-v2/<report_date>.csv` if None or empty.
-        task_exclusions: state:disease pair to exclude from model run (will be overwritten by data exclusions)
-        exclusions: path to exclusions csv (will be overwritten by data exclusions path info)
     """
     # Handle default data_exclusions_path
     excl_path = data_exclusions_path
@@ -204,18 +200,12 @@ def generate_rerun_config(
     # (i.e., we want to *exclude* tasks that are *not* in the file)
     task_excl_str: str = generate_tasks_excl_from_data_excl(excl_df=exclusions_df)
 
-    # Update task_Exclusions argument so that we only rerun for states/diseases with data modifications
-    # This overwrites the input task_exclusions if provided
-    current_task_exclusions = task_excl_str
-
     # Add the path to the data exclusions file to the user_args
     excl_field = (
         {"path": path_in_blob, "blob_storage_container": container_name}
         if excl_path.startswith("az://") and path_in_blob and container_name
         else {"path": excl_path, "blob_storage_container": None}
     )
-    # This overwrites the input exclusions if provided
-    current_exclusions = excl_field
 
     # Validate and sanitize args directly
     sanitized_args = validate_args(
@@ -229,8 +219,8 @@ def generate_rerun_config(
         job_id=job_id,
         as_of_date=as_of_date,
         output_container=output_container,
-        task_exclusions=current_task_exclusions,
-        exclusions=current_exclusions,
+        task_exclusions=task_excl_str,
+        exclusions=excl_field,
     )
 
     # Generate task-specific configs

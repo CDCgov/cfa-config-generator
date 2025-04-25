@@ -38,18 +38,14 @@ def test_extract_user_args(monkeypatch):
         "exclusions": None,
         "state": "all",
         "disease": "all",
-        # Expect date object
         "report_date": today,
-        # Expect date object
         "production_date": today,
-        # Expect list[date]
         "reference_dates": [
             min_reference_date,
             max_reference_date,
         ],
         "data_path": f"gold/{today.isoformat()}.parquet",
         "data_container": "nssp-etl",
-        # Will be generated
         "job_id": generate_default_job_id(as_of_date=as_of_date),
         "as_of_date": as_of_date,
         "output_container": "test-container",
@@ -71,24 +67,19 @@ def test_validate_args_default():
     max_reference_date = report_date - timedelta(days=1)
     min_reference_date = report_date - timedelta(weeks=8)
 
-    default_args = {
-        "state": "all",
-        "disease": "all",
-        "exclusions": None,
-        # Pass date object
-        "report_date": report_date,
-        # Pass date object
-        "production_date": production_date,
-        # Pass list[date]
-        "reference_dates": [min_reference_date, max_reference_date],
-        "data_path": f"gold/{report_date.isoformat()}.parquet",
-        "data_container": None,
-        "job_id": "test-job-id",
-        "as_of_date": as_of_date,
-        "output_container": "test-container",
-    }
-
-    validated_args = validate_args(**default_args)
+    validated_args = validate_args(
+        state="all",
+        disease="all",
+        exclusions=None,
+        report_date=report_date,
+        production_date=production_date,
+        reference_dates=[min_reference_date, max_reference_date],
+        data_path=f"gold/{report_date.isoformat()}.parquet",
+        data_container=None,
+        job_id="test-job-id",
+        as_of_date=as_of_date,
+        output_container="test-container",
+    )
     assert validated_args == {
         "state": list(set(all_states) - set(nssp_states_omit)),
         "disease": all_diseases,
@@ -107,64 +98,63 @@ def test_validate_args_default():
 def test_invalid_state():
     """Tests that an invalid state raises a ValueError."""
     today = date.today()
-    args = {
-        "state": "invalid",
-        "disease": "all",
-        "report_date": today,
-        "reference_dates": [today - timedelta(days=1), today - timedelta(days=2)],
-        "data_path": "gold/",
-        "data_container": None,
-        "production_date": today,
-        "job_id": "test-job-id",
-        "as_of_date": generate_timestamp(),
-        "output_container": "test-container",
-    }
     with pytest.raises(ValueError):
-        validate_args(**args)
+        validate_args(
+            state="invalid",
+            disease="all",
+            report_date=today,
+            reference_dates=[today - timedelta(days=1), today - timedelta(days=2)],
+            data_path="gold/",
+            data_container=None,
+            production_date=today,
+            job_id="test-job-id",
+            as_of_date=generate_timestamp(),
+            output_container="test-container",
+        )
 
 
 def test_invalid_disease():
     """Tests that an invalid disease raises a ValueError."""
     today = date.today()
-    args = {
-        "state": "all",
-        "disease": "invalid",
-        "report_date": today,
-        "reference_dates": [today - timedelta(days=1), today - timedelta(days=2)],
-        "data_path": "gold/",
-        "data_container": None,
-        "production_date": today,
-        "job_id": "test-job-id",
-        "as_of_date": generate_timestamp(),
-        "output_container": "test-container",
-    }
+
     with pytest.raises(ValueError):
-        validate_args(**args)
+        validate_args(
+            state="all",
+            disease="invalid",
+            report_date=today,
+            reference_dates=[today - timedelta(days=1), today - timedelta(days=2)],
+            data_path="gold/",
+            data_container=None,
+            production_date=today,
+            job_id="test-job-id",
+            as_of_date=generate_timestamp(),
+            output_container="test-container",
+        )
 
 
 def test_invalid_reference_date_logic():
     """Tests that reference dates after report date raise ValueError."""
     today = date.today()
-    args = {
-        "state": "all",
-        "disease": "all",
-        "report_date": today,
-        # Invalid logic
-        "reference_dates": [
-            today + timedelta(days=1),
-            today + timedelta(days=2),
-        ],
-        "data_path": "gold/",
-        "data_container": None,
-        "production_date": today,
-        "job_id": "test-job-id",
-        "as_of_date": generate_timestamp(),
-        "output_container": "test-container",
-    }
+
     with pytest.raises(
         ValueError, match="Ensure all reference_dates are on or before the report date"
     ):
-        validate_args(**args)
+        validate_args(
+            state="all",
+            disease="all",
+            report_date=today,
+            # Invalid logic
+            reference_dates=[
+                today + timedelta(days=1),
+                today + timedelta(days=2),
+            ],
+            data_path="gold/",
+            data_container=None,
+            production_date=today,
+            job_id="test-job-id",
+            as_of_date=generate_timestamp(),
+            output_container="test-container",
+        )
 
 
 def test_invalid_disease_exclusion():
@@ -172,22 +162,19 @@ def test_invalid_disease_exclusion():
     today = date.today()
     as_of_date = generate_timestamp()
     # valid diseases are 'COVID-19' or 'Influenza'
-    task_exclusions = "WA:monkeypox"
+    task_exclusions = "WA:mpox"
 
-    args = {
-        # Use a valid state for this test focus
-        "state": "WA",
-        "disease": "all",
-        "report_date": today,
-        "reference_dates": [today - timedelta(days=1), today - timedelta(days=2)],
-        "data_path": "gold/",
-        "data_container": None,
-        "production_date": today,
-        "job_id": "test-job-id",
-        "as_of_date": as_of_date,
-        "task_exclusions": task_exclusions,
-        "output_container": "test-container",
-    }
-
-    with pytest.raises(ValueError, match="Disease monkeypox not recognized"):
-        validate_args(**args)
+    with pytest.raises(ValueError, match="Disease mpox not recognized"):
+        validate_args(
+            state="WA",
+            disease="all",
+            report_date=today,
+            reference_dates=[today - timedelta(days=1), today - timedelta(days=2)],
+            data_path="gold/",
+            data_container=None,
+            production_date=today,
+            job_id="test-job-id",
+            as_of_date=as_of_date,
+            task_exclusions=task_exclusions,
+            output_container="test-container",
+        )

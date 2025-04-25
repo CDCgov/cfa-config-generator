@@ -245,9 +245,6 @@ def validate_args(
     else:
         args_dict["disease"] = [disease]
 
-    # Dates are now expected as date objects, no string parsing needed here.
-    # Validation logic remains.
-    # Removed checks for None as arguments are now required
     # Check valid reference_date range relative to report_date
     if not all(isinstance(ref, date) for ref in reference_dates):
         raise ValueError("All elements in reference_dates must be date objects.")
@@ -296,14 +293,8 @@ def update_task_id(
     """
     try:
         # Task id format: <state>_<disease>_<timestamp>
-        # eg WY_Influenza_2024-01-01T12:00:00.000Z
-        parts = task_id.split("_")
-        if len(parts) < 2:
-            raise ValueError(
-                "Task ID does not contain state and disease separated by underscore."
-            )
-        state = parts[0]
-        disease = parts[1]
+        # eg WY_Influenza_1730395796
+        state, disease, _ = task_id.split("_")
         # Reconstruct with the new timestamp
         return f"{state}_{disease}_{timestamp}"
     except ValueError as e:
@@ -323,7 +314,7 @@ def generate_task_configs(
     production_date: date,
     job_id: str,
     output_container: str,
-    task_exclusions: dict | None = None,
+    task_exclusions: dict[str, list[str]] | None = None,
     exclusions: str | None = None,
 ) -> tuple[list[dict], str]:
     """
@@ -390,7 +381,7 @@ def generate_task_configs(
     return configs, job_id
 
 
-def exclude_task(config_data, filters):
+def exclude_task(config_data: list[dict], filters: dict[str, list[str]]) -> list[dict]:
     """
     Excludes a list of dictionaries based on multiple key-value pairs.
 
@@ -404,11 +395,10 @@ def exclude_task(config_data, filters):
     Returns:
         A new list containing the dictionaries that do not match all filter criteria.
     """
-    excl_list = []
-    for i in zip(filters["geo_value"], filters["disease"]):
-        excl_list.append(i)
 
-    filter_set = set(excl_list)
+    filter_set: set[tuple[str, str]] = set(
+        zip(filters["geo_value"], filters["disease"])
+    )
 
     filtered_data = [
         entry
