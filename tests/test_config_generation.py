@@ -19,18 +19,20 @@ def test_default_config_set():
     max_reference_date = report_date - timedelta(days=1)
     min_reference_date = report_date - timedelta(weeks=8)
 
-    default_args = {
-        "state": "all",
-        "disease": "all",
-        "report_date": report_date,
-        "reference_dates": [min_reference_date, max_reference_date],
-        "data_path": "gold/",
-        "data_container": None,
-        "production_date": production_date,
-        "job_id": "test-job-id",
-        "as_of_date": as_of_date,
-    }
-    validated_args = validate_args(**default_args)
+    validated_args = validate_args(
+        state="all",
+        disease="all",
+        report_date=report_date,
+        reference_dates=[min_reference_date, max_reference_date],
+        data_path=f"gold/{report_date.isoformat()}.parquet",
+        data_container=None,
+        production_date=production_date,
+        job_id="test-job-id",
+        as_of_date=as_of_date,
+        output_container="test-container",
+        exclusions=None,
+        task_exclusions=None,
+    )
 
     # Generate task-specific configs
     task_configs, _ = generate_task_configs(**validated_args)
@@ -47,18 +49,20 @@ def test_single_geo_disease_set():
     max_reference_date = report_date - timedelta(days=1)
     min_reference_date = report_date - timedelta(weeks=8)
 
-    default_args = {
-        "state": "CA",
-        "disease": "Influenza",
-        "report_date": report_date,
-        "reference_dates": [min_reference_date, max_reference_date],
-        "data_path": "gold/",
-        "data_container": None,
-        "production_date": production_date,
-        "job_id": "test-job-id",
-        "as_of_date": as_of_date,
-    }
-    validated_args = validate_args(**default_args)
+    validated_args = validate_args(
+        state="CA",
+        disease="Influenza",
+        report_date=report_date,
+        reference_dates=[min_reference_date, max_reference_date],
+        data_path=f"gold/{report_date.isoformat()}.parquet",
+        data_container=None,
+        production_date=production_date,
+        job_id="test-job-id",
+        as_of_date=as_of_date,
+        output_container="test-container",
+        exclusions=None,
+        task_exclusions=None,
+    )
 
     # Generate task-specific configs
     task_configs, _ = generate_task_configs(**validated_args)

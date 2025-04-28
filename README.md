@@ -7,7 +7,59 @@ projects down the line.
 
 ## Project Admin
 
-@amondal2
+- Nathan McIntosh, UTE2@cdc.gov
+- Micah Wiesner, ZQM6@cdc.gov
+- Zack Susswein, UTB2@cdc.gov
+
+## Use as a library
+This repository can be used as a library for other projects. Below are two examples of using the functionality to generate config files in Blob.
+
+```python
+from datetime import date, datetime, timedelta
+
+from cfa_config_generator.utils.epinow2.driver_functions import (
+    generate_config,
+    generate_rerun_config,
+)
+from cfa_config_generator.utils.epinow2.functions import generate_default_job_id
+
+today: date = date.today()
+now: datetime = datetime.now()
+
+# Generate and upload to blob for all states and diseases.
+generate_config(
+    state="all",
+    disease="all",
+    report_date=today,
+    reference_dates=[today - timedelta(days=1), today - timedelta(weeks=8)],
+    data_path=f"gold/{today.isoformat()}.parquet",
+    data_container="nssp-etl",
+    production_date=today,
+    job_id=generate_default_job_id(now.isoformat()),
+    as_of_date=now.isoformat(),
+    output_container="nssp-rt-testing",
+)
+
+# For reruns. Note that if we did not pass in state="all" and disease="all",
+# there is a risk of accidentally excluding a state-disease pair that is in the
+# data exclusions file. For example, if I ran this with state="NY" and
+# disease="COVID-19", and the data exclusions file contained a row for
+# "WA,Influenza", then no config would be generated for WA,Influenza.
+# We should clean this up in the future.
+generate_rerun_config(
+    state="all",
+    disease="all",
+    report_date=today,
+    reference_dates=[today - timedelta(days=1), today - timedelta(weeks=8)],
+    data_path=f"gold/{today.isoformat()}.parquet",
+    data_container="nssp-etl",
+    production_date=today,
+    job_id=generate_default_job_id(now.isoformat()),
+    as_of_date=now.isoformat(),
+    output_container="nssp-rt-testing",
+    data_exclusions_path="az://nssp-etl/outliers-v2/2025-04-23.csv",
+)
+```
 
 ## General Disclaimer
 This repository was created for use by CDC programs to collaborate on public health related projects in support of the [CDC mission](https://www.cdc.gov/about/organization/mission.htm).  GitHub is not hosted by the CDC, but is a third party website used by CDC and its partners to share information and collaborate on software. CDC use of GitHub does not imply an endorsement of any one particular service, product, or enterprise.

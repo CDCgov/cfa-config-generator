@@ -1,6 +1,7 @@
 import itertools
 import os
 from datetime import date, datetime, timedelta, timezone
+from typing import Any
 from uuid import UUID, uuid1
 
 import polars as pl
@@ -13,7 +14,7 @@ from cfa_config_generator.utils.epinow2.constants import (
 )
 
 
-def extract_user_args(as_of_date: str) -> dict:
+def extract_user_args(as_of_date: str) -> dict[str, Any]:
     """Extracts user-provided arguments from environment variables or uses default if none provided.
     Parameters:
         as_of_date: iso format timestamp of model run
@@ -22,15 +23,48 @@ def extract_user_args(as_of_date: str) -> dict:
     exclusions = os.getenv("exclusions") or None
     state = os.getenv("state") or "all"
     disease = os.getenv("disease") or "all"
-    report_date = os.getenv("report_date") or date.today()
-    production_date = os.getenv("production_date") or date.today()
-    min_reference_date, max_reference_date = get_reference_date_range(report_date)
-    reference_dates = os.getenv("reference_dates") or [
-        min_reference_date,
-        max_reference_date,
-    ]
 
-    data_path = f"gold/{report_date}.parquet"
+    # Handle report_date
+    report_date_str = os.getenv("report_date")
+    try:
+        report_date = (
+            date.fromisoformat(report_date_str) if report_date_str else date.today()
+        )
+    except ValueError:
+        raise ValueError(
+            f"Invalid report_date format: {report_date_str}. Use YYYY-MM-DD."
+        )
+
+    # Handle production_date
+    production_date_str = os.getenv("production_date")
+    try:
+        production_date = (
+            date.fromisoformat(production_date_str)
+            if production_date_str
+            else date.today()
+        )
+    except ValueError:
+        raise ValueError(
+            f"Invalid production_date format: {production_date_str}. Use YYYY-MM-DD."
+        )
+
+    min_reference_date, max_reference_date = get_reference_date_range(report_date)
+    reference_dates_str = os.getenv("reference_dates")
+    if reference_dates_str:
+        try:
+            min_ref_str, max_ref_str = reference_dates_str.split(",")
+            reference_dates = [
+                date.fromisoformat(min_ref_str.strip()),
+                date.fromisoformat(max_ref_str.strip()),
+            ]
+        except ValueError:
+            raise ValueError(
+                f"Invalid reference_dates format: {reference_dates_str}. Use 'YYYY-MM-DD, YYYY-MM-DD'."
+            )
+    else:
+        reference_dates = [min_reference_date, max_reference_date]
+
+    data_path = f"gold/{report_date.isoformat()}.parquet"
     data_container = os.getenv("data_container") or "nssp-etl"
     output_container = os.getenv("output_container") or "nssp-rt-testing"
     job_id = os.getenv("job_id") or generate_default_job_id(as_of_date=as_of_date)
@@ -55,17 +89,13 @@ def generate_timestamp() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def get_reference_date_range(report_date: date | str) -> tuple[date, date]:
+def get_reference_date_range(report_date: date) -> tuple[date, date]:
     """Returns a tuple of the minimum and maximum reference dates
     based on the report date, in the case that no reference_dates
     are provided.
     Parameters:
         report_date: date of model run
     """
-    # Convert user-provided report_date to date object
-    if isinstance(report_date, str):
-        report_date = date.fromisoformat(report_date)
-
     max_reference_date = report_date - timedelta(days=1)
     min_reference_date = report_date - timedelta(weeks=8)
 
@@ -145,18 +175,18 @@ def generate_tasks_excl_from_data_excl(excl_df: pl.DataFrame) -> str:
 
 
 def validate_args(
+    state: str,
+    disease: str,
+    report_date: date,
+    reference_dates: list[date],
+    data_path: str,
+    data_container: str,
+    production_date: date,
+    job_id: str,
+    as_of_date: str,
+    output_container: str,
     task_exclusions: str | None = None,
     exclusions: str | None = None,
-    state: str | None = None,
-    disease: str | None = None,
-    report_date: date | None = None,
-    reference_dates: list[date] | None = None,
-    data_path: str | None = None,
-    data_container: str | None = None,
-    production_date: date | None = None,
-    job_id: str | None = None,
-    as_of_date: str | None = None,
-    output_container: str | None = None,
 ) -> dict:
     """Checks that user-supplied arguments are valid and returns them
     in a standardized format for downstream use.
@@ -166,7 +196,7 @@ def validate_args(
         state: geography to run model
         disease: disease to run
         report_date: date of model run
-        reference_dates: array of reference (event) dates
+        reference_dates: list of reference (event) dates
         data_container: container for input data
         data_path: path to input data
         production_date: production date of model run
@@ -215,31 +245,16 @@ def validate_args(
     else:
         args_dict["disease"] = [disease]
 
-    # Standardize reference_dates
-    if isinstance(reference_dates, str):
-        try:
-            min_ref, max_ref = reference_dates.split(",")
-            reference_dates = [
-                date.fromisoformat(min_ref),
-                date.fromisoformat(max_ref),
-            ]
-        except ValueError:
-            raise ValueError(
-                "Invalid reference_dates. Ensure they are in the format 'YYYY-MM-DD,YYYY-MM-DD'."
-            )
-
-    # Standardize report_date and production_date
-    if isinstance(report_date, str):
-        report_date = date.fromisoformat(report_date)
-
-    if isinstance(production_date, str):
-        production_date = date.fromisoformat(production_date)
-
-    # Check valid reference_date
+    # Check valid reference_date range relative to report_date
+    if not all(isinstance(ref, date) for ref in reference_dates):
+        raise ValueError("All elements in reference_dates must be date objects.")
+    if len(reference_dates) != 2:
+        raise ValueError("reference_dates must contain exactly two date objects.")
     if not all(ref <= report_date for ref in reference_dates):
         raise ValueError(
-            "Invalid reference_date. Ensure all reference_dates are before the report date."
+            "Invalid reference_date. Ensure all reference_dates are on or before the report date."
         )
+
     args_dict["reference_dates"] = reference_dates
     args_dict["report_date"] = report_date
     args_dict["data_path"] = data_path
@@ -253,8 +268,8 @@ def validate_args(
 
 
 def generate_task_id(
-    state: str | None = None,
-    disease: str | None = None,
+    state: str,
+    disease: str,
 ) -> str:
     """Generates a task_id which consists of the hex code of the job_id
     and information on the state and pathogen. Also timestamps the task
@@ -268,57 +283,58 @@ def generate_task_id(
 
 
 def update_task_id(
-    task_id: str | None = None,
-    timestamp: int | None = None,
+    task_id: str,
+    timestamp: str,
 ) -> str:
     """Updates a task_id with new timestamp.
     Parameters:
         task_id: task_id to update
-        timestamp: updated timestamp
+        timestamp: updated timestamp string
     """
     try:
         # Task id format: <state>_<disease>_<timestamp>
         # eg WY_Influenza_1730395796
         state, disease, _ = task_id.split("_")
+        # Reconstruct with the new timestamp
         return f"{state}_{disease}_{timestamp}"
-    except ValueError:
+    except ValueError as e:
         raise ValueError(
-            "Task ID does not match expected format. Check that task IDs are formatted as <job_id>_<state>_<disease>_<timestamp>."
+            f"Task ID '{task_id}' does not match expected format. Check that task IDs are formatted as <state>_<disease>_<timestamp>. Error: {e}"
         )
 
 
 def generate_task_configs(
-    task_exclusions: list | None = None,
+    state: list[str],
+    disease: list[str],
+    report_date: date,
+    reference_dates: list[date],
+    data_container: str,
+    data_path: str,
+    as_of_date: str,
+    production_date: date,
+    job_id: str,
+    output_container: str,
+    task_exclusions: dict[str, list[str]] | None = None,
     exclusions: str | None = None,
-    state: list | None = None,
-    disease: list | None = None,
-    report_date: date | None = None,
-    reference_dates: list[date] | None = None,
-    data_container: str | None = None,
-    data_path: str | None = None,
-    as_of_date: str | None = None,
-    production_date: date | None = None,
-    job_id: str | None = None,
-    output_container: str | None = None,
 ) -> tuple[list[dict], str]:
     """
     Generates a list of configuration objects based on
     supplied parameters.
     Parameters:
-        task_exclusions: state:disease to exclude
-        exclusions: a path to exclusions csv
-        state: geography to run model
-        disease: pathogen to run
+        state: list of geographies to run model
+        disease: list of pathogens to run
         report_date: date of model run
         reference_dates: array of reference (event) dates
-        as_of_date: iso format datetime string of model run
         data_container: container for input data
         data_path: path to input data
+        as_of_date: iso format datetime string of model run
         production_date: production date of model run
         job_id: unique identifier for job
         output_container: Azure container for output
+        task_exclusions: dictionary of state:disease pairs to exclude
+        exclusions: a path to exclusions csv
     Returns:
-        A list of configuration objects.
+        A list of configuration objects and the job_id.
     """
     configs = []
     # Create tasks for each state-pathogen combination
@@ -365,7 +381,7 @@ def generate_task_configs(
     return configs, job_id
 
 
-def exclude_task(config_data, filters):
+def exclude_task(config_data: list[dict], filters: dict[str, list[str]]) -> list[dict]:
     """
     Excludes a list of dictionaries based on multiple key-value pairs.
 
@@ -379,11 +395,10 @@ def exclude_task(config_data, filters):
     Returns:
         A new list containing the dictionaries that do not match all filter criteria.
     """
-    excl_list = []
-    for i in zip(filters["geo_value"], filters["disease"]):
-        excl_list.append(i)
 
-    filter_set = set(excl_list)
+    filter_set: set[tuple[str, str]] = set(
+        zip(filters["geo_value"], filters["disease"])
+    )
 
     filtered_data = [
         entry
