@@ -219,7 +219,7 @@ def validate_args(
             for ind_disease in disease_excl:
                 if ind_disease not in all_diseases:
                     raise ValueError(
-                        f"Disease {ind_disease} not recognized. Valid options are 'COVID-19' or 'Influenza'"
+                        f"Disease {ind_disease} not recognized. Valid options are 'COVID-19', 'Influenza', or 'RSV'."
                     )
             args_dict["task_exclusions"] = {
                 "geo_value": state_excl,
@@ -240,7 +240,7 @@ def validate_args(
         args_dict["disease"] = all_diseases
     elif disease not in all_diseases:
         raise ValueError(
-            f"Disease {disease} not recognized. Valid options are 'COVID-19' or 'Influenza'."
+            f"Disease {disease} not recognized. Valid options are 'COVID-19', 'Influenza', or 'RSV'."
         )
     else:
         args_dict["disease"] = [disease]

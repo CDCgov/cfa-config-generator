@@ -161,7 +161,7 @@ def test_invalid_disease_exclusion():
     """Tests that an invalid disease raises a ValueError."""
     today = date.today()
     as_of_date = generate_timestamp()
-    # valid diseases are 'COVID-19' or 'Influenza'
+    # valid diseases are 'COVID-19', 'Influenza', or 'RSV'
     task_exclusions = "WA:mpox"
 
     with pytest.raises(ValueError, match="Disease mpox not recognized"):

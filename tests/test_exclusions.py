@@ -28,7 +28,7 @@ OH,Influenza,2025-01-01,2025-01-01"""
 
 
 def test_exclusions():
-    """Tests that two disease pairs of exclusion generates 100 configs."""
+    """Tests that two disease pairs of exclusion generates 150 configs."""
     report_date = production_date = date.today()
     as_of_date = generate_timestamp()
     max_reference_date = report_date - timedelta(days=1)
@@ -44,17 +44,17 @@ def test_exclusions():
         production_date=production_date,
         job_id="test-job-id",
         as_of_date=as_of_date,
-        task_exclusions="ID:COVID-19,WA:Influenza",
+        task_exclusions="ID:COVID-19,WA:Influenza,OH:RSV",
         output_container="test-container",
         exclusions=None,
     )
     task_configs, _ = generate_task_configs(**validated_args)
-    remaining_configs = 100
+    remaining_configs = 150
     assert len(task_configs) == remaining_configs
 
 
 def test_single_exclusion():
-    """Tests that a single disease pair exclusion generates 101 configs."""
+    """Tests that a single disease pair exclusion generates 152 configs."""
 
     report_date = production_date = date.today()
     as_of_date = generate_timestamp()
@@ -76,7 +76,7 @@ def test_single_exclusion():
         exclusions=None,
     )
     task_configs, _ = generate_task_configs(**validated_args)
-    remaining_configs = 101
+    remaining_configs = 152
     assert len(task_configs) == remaining_configs
 
 
