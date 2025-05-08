@@ -72,7 +72,7 @@ all_states = [
 ]
 
 nssp_states_omit = ["AS", "FM", "MH", "NP", "PR", "PW", "VI", "MO", "GU"]
-all_diseases = ["COVID-19", "Influenza"]
+all_diseases = ["COVID-19", "Influenza", "RSV"]
 data_sources = ["nhsn", "nssp"]
 
 azure_storage = {
