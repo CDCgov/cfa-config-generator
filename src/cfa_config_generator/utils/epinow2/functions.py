@@ -229,12 +229,8 @@ def validate_args(
             raise IndexError(
                 "Task exclusions should be in the form 'state:disease,state:disease'"
             )
-    if state == "all":
-        args_dict["state"] = list(set(all_states) - set(nssp_states_omit))
-    elif state not in all_states:
-        raise ValueError(f"State {state} not recognized.")
-    else:
-        args_dict["state"] = [state]
+
+    args_dict["state"] = parse_state(state)
 
     if disease == "all":
         args_dict["disease"] = all_diseases
@@ -407,3 +403,28 @@ def exclude_task(config_data: list[dict], filters: dict[str, list[str]]) -> list
     ]
 
     return filtered_data
+
+
+def parse_state(state: str) -> list[str]:
+    match state:
+        case "all":
+            return list(set(all_states) - set(nssp_states_omit))
+        case s if "," not in s:
+            # This is a single state
+            if s not in all_states:
+                raise ValueError(f"State {s} not recognized.")
+            return [s]
+        case s if "," in s:
+            # This is a list of states
+            state_list: list[str] = [state.strip() for state in s.split(",")]
+            for ind_state in state_list:
+                if ind_state not in all_states:
+                    raise ValueError(f"State {ind_state} not recognized.")
+            return state_list
+        case _:
+            raise ValueError(
+                (
+                    f"State {state} not recognized. Valid options are 'all', "
+                    " a state, or a comma-separated list of states."
+                )
+            )

@@ -11,6 +11,7 @@ from cfa_config_generator.utils.epinow2.functions import (
     extract_user_args,
     generate_default_job_id,
     generate_timestamp,
+    parse_state,
     validate_args,
 )
 
@@ -75,7 +76,7 @@ def test_validate_args_default():
         production_date=production_date,
         reference_dates=[min_reference_date, max_reference_date],
         data_path=f"gold/{report_date.isoformat()}.parquet",
-        data_container=None,
+        data_container="test-container",
         job_id="test-job-id",
         as_of_date=as_of_date,
         output_container="test-container",
@@ -87,7 +88,7 @@ def test_validate_args_default():
         "reference_dates": [min_reference_date, max_reference_date],
         "report_date": report_date,
         "data_path": f"gold/{report_date.isoformat()}.parquet",
-        "data_container": None,
+        "data_container": "test-container",
         "production_date": date.today(),
         "job_id": "test-job-id",
         "as_of_date": as_of_date,
@@ -105,7 +106,7 @@ def test_invalid_state():
             report_date=today,
             reference_dates=[today - timedelta(days=1), today - timedelta(days=2)],
             data_path="gold/",
-            data_container=None,
+            data_container="test-container",
             production_date=today,
             job_id="test-job-id",
             as_of_date=generate_timestamp(),
@@ -124,7 +125,7 @@ def test_invalid_disease():
             report_date=today,
             reference_dates=[today - timedelta(days=1), today - timedelta(days=2)],
             data_path="gold/",
-            data_container=None,
+            data_container="test-container",
             production_date=today,
             job_id="test-job-id",
             as_of_date=generate_timestamp(),
@@ -149,7 +150,7 @@ def test_invalid_reference_date_logic():
                 today + timedelta(days=2),
             ],
             data_path="gold/",
-            data_container=None,
+            data_container="test-container",
             production_date=today,
             job_id="test-job-id",
             as_of_date=generate_timestamp(),
@@ -171,10 +172,48 @@ def test_invalid_disease_exclusion():
             report_date=today,
             reference_dates=[today - timedelta(days=1), today - timedelta(days=2)],
             data_path="gold/",
-            data_container=None,
+            data_container="test-container",
             production_date=today,
             job_id="test-job-id",
             as_of_date=as_of_date,
             task_exclusions=task_exclusions,
             output_container="test-container",
         )
+
+
+@pytest.mark.parametrize(
+    argnames="state_val, should_fail",
+    argvalues=[
+        # Test all
+        ("all", False),
+        # Test multiple
+        ("WA, CA", False),
+        ("WA,CA   , TX", False),
+        ("WA,CA,TX,NY", False),
+        # Test single
+        ("OH", False),
+        ("CA", False),
+        # Test failures,
+        ("ZZ,WA", True),
+        ("OH,WA,OO", True),
+    ],
+)
+def test_state_parsing(state_val, should_fail):
+    if should_fail:
+        with pytest.raises(ValueError, match=r"State \w+ not recognized"):
+            parse_state(state_val)
+        return
+
+    parsed_states: list[str] = parse_state(state_val)
+    # Make sure the length of the state list is correct
+    if state_val == "all":
+        assert len(parsed_states) == len(set(all_states) - set(nssp_states_omit)), (
+            "Should have correct number of states for 'all' case"
+        )
+    else:
+        # Split the state_val by commas and check the length
+        split_vals: list[str] = [state.strip() for state in state_val.split(",")]
+        assert len(parsed_states) == len(split_vals)
+        # Check that all states are in the validated args
+        for s in split_vals:
+            assert s in parsed_states
