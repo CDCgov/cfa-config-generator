@@ -2,17 +2,12 @@ from datetime import date, timedelta
 
 import pytest
 
-from cfa_config_generator.utils.epinow2.constants import (
-    all_diseases,
-    all_states,
-    nssp_states_omit,
-)
+from cfa_config_generator.utils.epinow2.constants import all_diseases, nssp_valid_states
 from cfa_config_generator.utils.epinow2.functions import (
     extract_user_args,
     generate_default_job_id,
     generate_timestamp,
-    parse_disease,
-    parse_state,
+    parse_options,
     validate_args,
 )
 
@@ -83,8 +78,8 @@ def test_validate_args_default():
         output_container="test-container",
     )
     assert validated_args == {
-        "state": list(set(all_states) - set(nssp_states_omit)),
-        "disease": all_diseases,
+        "state": list(nssp_valid_states),
+        "disease": list(all_diseases),
         "exclusions": None,
         "reference_dates": [min_reference_date, max_reference_date],
         "report_date": report_date,
@@ -183,84 +178,56 @@ def test_invalid_disease_exclusion():
 
 
 @pytest.mark.parametrize(
-    argnames="state_val, should_fail",
+    argnames="raw_val, valid_opts, should_fail",
     argvalues=[
         # Test all
-        ("all", False),
+        ("all", all_diseases, False),
+        ("all", nssp_valid_states, False),
         # Test multiple
-        ("WA, CA", False),
-        ("WA,CA   , TX", False),
-        ("WA,CA,TX,NY", False),
+        ("COVID-19, Influenza", all_diseases, False),
+        ("COVID-19,Influenza", all_diseases, False),
+        ("COVID-19,Influenza,RSV", all_diseases, False),
+        ("WA, CA", nssp_valid_states, False),
+        ("WA,CA   , TX", nssp_valid_states, False),
+        ("WA,CA,TX,NY", nssp_valid_states, False),
         # Test single
-        ("OH", False),
-        ("CA", False),
-        ("WA ", False),
-        (" WA", False),
-        (" WA ", False),
+        ("COVID-19", all_diseases, False),
+        ("Influenza", all_diseases, False),
+        ("RSV", all_diseases, False),
+        (" RSV", all_diseases, False),
+        ("COVID-19 ", all_diseases, False),
+        (" COVID-19", all_diseases, False),
+        (" COVID-19 ", all_diseases, False),
+        ("OH", nssp_valid_states, False),
+        ("CA", nssp_valid_states, False),
+        ("WA ", nssp_valid_states, False),
+        (" WA", nssp_valid_states, False),
+        (" WA ", nssp_valid_states, False),
         # Test failures,
-        ("ZZ,WA", True),
-        ("OH,WA,OO", True),
+        ("ZZ,COVID-19", all_diseases, True),
+        ("COVID-19,ZZ", all_diseases, True),
+        ("ZZ,WA", nssp_valid_states, True),
+        ("OH,WA,OO", nssp_valid_states, True),
     ],
 )
-def test_state_parsing(state_val, should_fail):
+def test_option_parsing(raw_val, valid_opts, should_fail):
     if should_fail:
-        with pytest.raises(ValueError, match=r"State \w+ not recognized"):
-            parse_state(state_val)
+        with pytest.raises(ValueError, match=r"Options .+ not recognized"):
+            parse_options(raw_val, valid_opts)
         return
 
-    parsed_states: list[str] = parse_state(state_val)
-    # Make sure the length of the state list is correct
-    if state_val == "all":
-        assert len(parsed_states) == len(set(all_states) - set(nssp_states_omit)), (
-            "Should have correct number of states for 'all' case"
-        )
-    else:
-        # Split the state_val by commas and check the length
-        split_vals: list[str] = [state.strip() for state in state_val.split(",")]
-        assert len(parsed_states) == len(split_vals)
-        # Check that all states are in the validated args
-        for s in split_vals:
-            assert s in parsed_states
-
-
-@pytest.mark.parametrize(
-    argnames="disease_val, should_fail",
-    argvalues=[
-        # Test all
-        ("all", False),
-        # Test multiple
-        ("COVID-19, Influenza", False),
-        ("COVID-19,Influenza", False),
-        ("COVID-19,Influenza,RSV", False),
-        # Test single
-        ("COVID-19", False),
-        ("Influenza", False),
-        ("RSV", False),
-        (" RSV", False),
-        ("COVID-19 ", False),
-        (" COVID-19", False),
-        (" COVID-19 ", False),
-        # Test failures,
-        ("ZZ,COVID-19", True),
-        ("COVID-19,ZZ", True),
-    ],
-)
-def test_disease_parsing(disease_val, should_fail):
-    if should_fail:
-        with pytest.raises(ValueError, match=r"Disease \w+ not recognized"):
-            parse_disease(disease_val)
-        return
-
-    parsed_diseases: list[str] = parse_disease(disease_val)
+    parsed_options: list[str] = parse_options(raw_val, valid_opts)
     # Make sure the length of the disease list is correct
-    if disease_val == "all":
-        assert len(parsed_diseases) == len(all_diseases), (
-            "Should have correct number of diseases for 'all' case"
+    if raw_val == "all":
+        assert len(parsed_options) == len(valid_opts), (
+            "Should have correct number of options for 'all' case"
         )
     else:
-        # Split the disease_val by commas and check the length
-        split_vals: list[str] = [disease.strip() for disease in disease_val.split(",")]
-        assert len(parsed_diseases) == len(split_vals)
+        # Split the raw_val by commas and check the length
+        split_vals: list[str] = [opt.strip() for opt in raw_val.split(",")]
+        assert len(parsed_options) == len(split_vals)
         # Check that all diseases are in the validated args
-        for d in split_vals:
-            assert d in parsed_diseases
+        unexpected_vals = set(split_vals).difference(valid_opts)
+        assert len(unexpected_vals) == 0, (
+            f"Unexpected values in {raw_val}: {unexpected_vals}"
+        )
