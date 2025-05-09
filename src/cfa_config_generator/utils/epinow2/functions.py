@@ -414,11 +414,11 @@ def parse_options(raw_input: str, valid_options: Iterable[str]) -> list[str]:
     Returns:
     -------
         list[str]
-            list of diseases to run
+            list of options to use.
 
     Raises:
     -------
-        ValueError: If the option. is not recognized or if the format is invalid.
+        ValueError: If the option is not recognized or if the format is invalid.
     """
     match raw_input:
         case "all" | "*":
