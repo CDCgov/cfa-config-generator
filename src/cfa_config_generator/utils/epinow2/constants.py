@@ -15,7 +15,7 @@ shared_params = {
     "model": "EpiNow2",
 }
 
-all_states = [
+all_states = (
     "AK",
     "AL",
     "AR",
@@ -69,11 +69,12 @@ all_states = [
     "WV",
     "WY",
     "US",
-]
+)
 
-nssp_states_omit = ["AS", "FM", "MH", "NP", "PR", "PW", "VI", "MO", "GU"]
-all_diseases = ["COVID-19", "Influenza", "RSV"]
-data_sources = ["nhsn", "nssp"]
+nssp_states_omit = ("AS", "FM", "MH", "NP", "PR", "PW", "VI", "MO", "GU")
+nssp_valid_states = tuple(set(all_states).difference(nssp_states_omit))
+all_diseases = ("COVID-19", "Influenza", "RSV")
+data_sources = ("nhsn", "nssp")
 
 azure_storage = {
     "azure_storage_account_url": "https://cfaazurebatchprd.blob.core.windows.net/",
@@ -82,7 +83,7 @@ azure_storage = {
     "outliers_blob_path": "az://nssp-etl/outliers-v2/{}.csv",
 }
 
-modifiable_params = [
+modifiable_params = (
     "parameters",
     "data",
     "seed",
@@ -92,7 +93,7 @@ modifiable_params = [
     "exclusions",
     "quantile_width",
     "model",
-]
+)
 
 sample_task = {
     "job_id": "sample-job-id",

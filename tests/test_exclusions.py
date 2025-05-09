@@ -8,7 +8,7 @@ import pytest
 from hypothesis import given
 from polars.testing.parametric import column, dataframes
 
-from cfa_config_generator.utils.epinow2.constants import all_diseases, all_states
+from cfa_config_generator.utils.epinow2.constants import all_diseases, nssp_valid_states
 from cfa_config_generator.utils.epinow2.functions import (
     generate_task_configs,
     generate_tasks_excl_from_data_excl,
@@ -40,7 +40,7 @@ def test_exclusions():
         report_date=report_date,
         reference_dates=[min_reference_date, max_reference_date],
         data_path=f"gold/{report_date.isoformat()}.parquet",
-        data_container=None,
+        data_container="test-container",
         production_date=production_date,
         job_id="test-job-id",
         as_of_date=as_of_date,
@@ -67,7 +67,7 @@ def test_single_exclusion():
         report_date=report_date,
         reference_dates=[min_reference_date, max_reference_date],
         data_path=f"gold/{report_date.isoformat()}.parquet",
-        data_container=None,
+        data_container="test-container",
         production_date=production_date,
         job_id="test-job-id",
         as_of_date=as_of_date,
@@ -94,7 +94,7 @@ def test_task_exclusion():
         report_date=report_date,
         reference_dates=[min_reference_date, max_reference_date],
         data_path=f"gold/{report_date.isoformat()}.parquet",
-        data_container=None,
+        data_container="test-container",
         production_date=production_date,
         job_id="test-job-id",
         as_of_date=as_of_date,
@@ -125,14 +125,14 @@ def test_data_exclusion(good_config):
         report_date=report_date,
         reference_dates=[min_reference_date, max_reference_date],
         data_path=f"gold/{report_date.isoformat()}.parquet",
-        data_container=None,
+        data_container="test-container",
         production_date=production_date,
         job_id="test-job-id",
         as_of_date=as_of_date,
         task_exclusions=task_excl_str,
         exclusions={
             "path": "tests/test_exclusions_passes.csv",
-            "blob_storage_container": None,
+            "blob_storage_container": "test-container",
         },
         output_container="test-container",
     )
@@ -145,7 +145,7 @@ def test_data_exclusion(good_config):
 @given(
     dataframes(
         cols=[
-            column(name="state", strategy=st.sampled_from(all_states)),
+            column(name="state", strategy=st.sampled_from(nssp_valid_states)),
             column(name="disease", strategy=st.sampled_from(all_diseases)),
             column(
                 name="report_date",
@@ -176,7 +176,7 @@ def test_data_exclusions_prop_check(data: pl.DataFrame):
     got: str = generate_tasks_excl_from_data_excl(data)
 
     expected_number_of_rows = len(set(zip(data["state"], data["disease"])))
-    total_possible_rows = len(all_states) * len(all_diseases)
+    total_possible_rows = len(nssp_valid_states) * len(all_diseases)
 
     # We should get out exactly total_possible_rows - expected_number_of_rows
     assert len(got.split(",")) == (total_possible_rows - expected_number_of_rows)
