@@ -11,6 +11,7 @@ from cfa_config_generator.utils.epinow2.functions import (
     extract_user_args,
     generate_default_job_id,
     generate_timestamp,
+    parse_disease,
     parse_state,
     validate_args,
 )
@@ -193,6 +194,9 @@ def test_invalid_disease_exclusion():
         # Test single
         ("OH", False),
         ("CA", False),
+        ("WA ", False),
+        (" WA", False),
+        (" WA ", False),
         # Test failures,
         ("ZZ,WA", True),
         ("OH,WA,OO", True),
@@ -217,3 +221,46 @@ def test_state_parsing(state_val, should_fail):
         # Check that all states are in the validated args
         for s in split_vals:
             assert s in parsed_states
+
+
+@pytest.mark.parametrize(
+    argnames="disease_val, should_fail",
+    argvalues=[
+        # Test all
+        ("all", False),
+        # Test multiple
+        ("COVID-19, Influenza", False),
+        ("COVID-19,Influenza", False),
+        ("COVID-19,Influenza,RSV", False),
+        # Test single
+        ("COVID-19", False),
+        ("Influenza", False),
+        ("RSV", False),
+        (" RSV", False),
+        ("COVID-19 ", False),
+        (" COVID-19", False),
+        (" COVID-19 ", False),
+        # Test failures,
+        ("ZZ,COVID-19", True),
+        ("COVID-19,ZZ", True),
+    ],
+)
+def test_disease_parsing(disease_val, should_fail):
+    if should_fail:
+        with pytest.raises(ValueError, match=r"Disease \w+ not recognized"):
+            parse_disease(disease_val)
+        return
+
+    parsed_diseases: list[str] = parse_disease(disease_val)
+    # Make sure the length of the disease list is correct
+    if disease_val == "all":
+        assert len(parsed_diseases) == len(all_diseases), (
+            "Should have correct number of diseases for 'all' case"
+        )
+    else:
+        # Split the disease_val by commas and check the length
+        split_vals: list[str] = [disease.strip() for disease in disease_val.split(",")]
+        assert len(parsed_diseases) == len(split_vals)
+        # Check that all diseases are in the validated args
+        for d in split_vals:
+            assert d in parsed_diseases

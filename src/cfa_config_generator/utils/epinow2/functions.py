@@ -232,14 +232,7 @@ def validate_args(
 
     args_dict["state"] = parse_state(state)
 
-    if disease == "all":
-        args_dict["disease"] = all_diseases
-    elif disease not in all_diseases:
-        raise ValueError(
-            f"Disease {disease} not recognized. Valid options are 'COVID-19', 'Influenza', or 'RSV'."
-        )
-    else:
-        args_dict["disease"] = [disease]
+    args_dict["disease"] = parse_disease(disease)
 
     # Check valid reference_date range relative to report_date
     if not all(isinstance(ref, date) for ref in reference_dates):
@@ -406,11 +399,30 @@ def exclude_task(config_data: list[dict], filters: dict[str, list[str]]) -> list
 
 
 def parse_state(state: str) -> list[str]:
+    """
+    Parses the state argument and returns a list of states.
+
+    Parameters:
+    ----------
+        state: str
+            A string representing a single state, a comma-separated list of states,
+            or the string "all" to include all states.
+
+    Returns:
+    -------
+        list[str]
+            list of states to run
+
+    Raises:
+    -------
+        ValueError: If the state is not recognized or if the format is invalid.
+    """
     match state:
         case "all":
             return list(set(all_states) - set(nssp_states_omit))
         case s if "," not in s:
             # This is a single state
+            s = s.strip()
             if s not in all_states:
                 raise ValueError(f"State {s} not recognized.")
             return [s]
@@ -426,5 +438,49 @@ def parse_state(state: str) -> list[str]:
                 (
                     f"State {state} not recognized. Valid options are 'all', "
                     " a state, or a comma-separated list of states."
+                )
+            )
+
+
+def parse_disease(disease: str) -> list[str]:
+    """
+    Parses the disease argument and returns a list of diseases.
+
+    Parameters:
+    ----------
+        disease: str
+            A string representing a single disease, a comma-separated list of diseases,
+            or the string "all" to include all diseases.
+
+    Returns:
+    -------
+        list[str]
+            list of diseases to run
+
+    Raises:
+    -------
+        ValueError: If the disease is not recognized or if the format is invalid.
+    """
+    match disease:
+        case "all":
+            return all_diseases
+        case d if "," not in d:
+            # This is a single disease
+            d = d.strip()
+            if d not in all_diseases:
+                raise ValueError(f"Disease {d} not recognized.")
+            return [d]
+        case d if "," in d:
+            # This is a list of diseases
+            disease_list: list[str] = [disease.strip() for disease in d.split(",")]
+            for ind_disease in disease_list:
+                if ind_disease not in all_diseases:
+                    raise ValueError(f"Disease {ind_disease} not recognized.")
+            return disease_list
+        case _:
+            raise ValueError(
+                (
+                    f"Disease {disease} not recognized. Valid options are 'all', "
+                    " a disease, or a comma-separated list of diseases."
                 )
             )
