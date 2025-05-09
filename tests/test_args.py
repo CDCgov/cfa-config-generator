@@ -217,7 +217,7 @@ def test_option_parsing(raw_val, valid_opts, should_fail):
         return
 
     parsed_options: list[str] = parse_options(raw_val, valid_opts)
-    # Make sure the length of the disease list is correct
+    # Make sure the length of the list is correct
     if raw_val == "all":
         assert len(parsed_options) == len(valid_opts), (
             "Should have correct number of options for 'all' case"
@@ -226,7 +226,7 @@ def test_option_parsing(raw_val, valid_opts, should_fail):
         # Split the raw_val by commas and check the length
         split_vals: list[str] = [opt.strip() for opt in raw_val.split(",")]
         assert len(parsed_options) == len(split_vals)
-        # Check that all diseases are in the validated args
+        # Check that all options are in the validated args
         unexpected_vals = set(split_vals).difference(valid_opts)
         assert len(unexpected_vals) == 0, (
             f"Unexpected values in {raw_val}: {unexpected_vals}"
