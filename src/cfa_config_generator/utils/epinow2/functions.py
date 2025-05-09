@@ -428,7 +428,7 @@ def parse_state(state: str) -> list[str]:
             return [s]
         case s if "," in s:
             # This is a list of states
-            state_list: list[str] = [state.strip() for state in s.split(",")]
+            state_list: list[str] = [st.strip() for st in s.split(",")]
             for ind_state in state_list:
                 if ind_state not in all_states:
                     raise ValueError(f"State {ind_state} not recognized.")
@@ -472,7 +472,7 @@ def parse_disease(disease: str) -> list[str]:
             return [d]
         case d if "," in d:
             # This is a list of diseases
-            disease_list: list[str] = [disease.strip() for disease in d.split(",")]
+            disease_list: list[str] = [ds.strip() for ds in d.split(",")]
             for ind_disease in disease_list:
                 if ind_disease not in all_diseases:
                     raise ValueError(f"Disease {ind_disease} not recognized.")
