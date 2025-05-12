@@ -400,7 +400,9 @@ def exclude_task(config_data: list[dict], filters: dict[str, list[str]]) -> list
     return filtered_data
 
 
-def parse_options(raw_input: str, valid_options: Iterable[str]) -> list[str]:
+def parse_options(
+    raw_input: str | list[str], valid_options: Iterable[str]
+) -> list[str]:
     """
     Parses the raw_input and returns a list of options. This is primarily
     intended to handle parsing of states and diseases
@@ -423,14 +425,14 @@ def parse_options(raw_input: str, valid_options: Iterable[str]) -> list[str]:
     match raw_input:
         case "all" | "*":
             return list(valid_options)
-        case o if "," not in o:
-            # This is a single option
+        case str(o) if "," not in o:
+            # This is a single option as a string
             o = o.strip()
             if o not in valid_options:
                 raise ValueError(f"Option {o} not recognized.")
             return [o]
-        case o if "," in o:
-            # This is a list of options
+        case str(o) if "," in o:
+            # This is a list of options as a string
             option_list: list[str] = [os.strip() for os in o.split(",")]
 
             # Perform set diff to catch any invalid options and raise an error
@@ -444,10 +446,27 @@ def parse_options(raw_input: str, valid_options: Iterable[str]) -> list[str]:
                 )
 
             return option_list
+        case list(o):
+            # This is a list of options
+            if not all(isinstance(os, str) for os in o):
+                raise ValueError(
+                    f"All elements in the list must be strings. Got {type(o)} instead."
+                )
+
+            parsed: list[str] = [os.strip() for os in o]
+            invalid_options: set[str] = set(parsed).difference(valid_options)
+            if any(invalid_options):
+                raise ValueError(
+                    (
+                        f"Options {invalid_options} not recognized."
+                        " Valid options are {valid_options}."
+                    )
+                )
+            return o
         case _:
             raise ValueError(
                 (
-                    f"Option {raw_input} not recognized. Valid options are 'all', "
+                    f"Options {raw_input} not recognized. Valid options are 'all', "
                     " a singleton, or a comma-separated list of options."
                 )
             )

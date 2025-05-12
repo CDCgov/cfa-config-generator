@@ -190,6 +190,7 @@ def test_invalid_disease_exclusion():
         ("WA, CA", nssp_valid_states, False),
         ("WA,CA   , TX", nssp_valid_states, False),
         ("WA,CA,TX,NY", nssp_valid_states, False),
+        (["OH ", "WA", "DC"], nssp_valid_states, False),
         # Test single
         ("COVID-19", all_diseases, False),
         ("Influenza", all_diseases, False),
@@ -209,16 +210,17 @@ def test_invalid_disease_exclusion():
         ("ZZ,WA", nssp_valid_states, True),
         ("OH,WA,OO", nssp_valid_states, True),
         (32, nssp_valid_states, True),
-        (["OH","WA","OO"], nssp_valid_states, True)
     ],
 )
 def test_option_parsing(raw_val, valid_opts, should_fail):
     if should_fail:
-        with pytest.raises(ValueError, match=r"Options .+ not recognized"):
-            parse_options(raw_val, valid_opts)
+        with pytest.raises(ValueError, match=r"Option?s .+ not recognized"):
+            parse_options(raw_input=raw_val, valid_options=valid_opts)
         return
 
-    parsed_options: list[str] = parse_options(raw_val, valid_opts)
+    parsed_options: list[str] = parse_options(
+        raw_input=raw_val, valid_options=valid_opts
+    )
     # Make sure the length of the list is correct
     if raw_val == "all":
         assert len(parsed_options) == len(valid_opts), (
@@ -226,7 +228,11 @@ def test_option_parsing(raw_val, valid_opts, should_fail):
         )
     else:
         # Split the raw_val by commas and check the length
-        split_vals: list[str] = [opt.strip() for opt in raw_val.split(",")]
+        split_vals: list[str] = (
+            [opt.strip() for opt in raw_val.split(",")]
+            if isinstance(raw_val, str)
+            else [opt.strip() for opt in raw_val]
+        )
         assert len(parsed_options) == len(split_vals)
         # Check that all options are in the validated args
         unexpected_vals = set(split_vals).difference(valid_opts)
