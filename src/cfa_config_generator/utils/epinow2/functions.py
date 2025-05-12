@@ -467,6 +467,7 @@ def parse_options(
             raise ValueError(
                 (
                     f"Options {raw_input} not recognized. Valid options are 'all', "
-                    " a singleton, or a comma-separated list of options."
+                    " a singleton, or a comma-separated list of options as a string, "
+                    f"or a list of strings. Got {type(raw_input)} instead."
                 )
             )
