@@ -208,6 +208,8 @@ def test_invalid_disease_exclusion():
         ("COVID-19,ZZ", all_diseases, True),
         ("ZZ,WA", nssp_valid_states, True),
         ("OH,WA,OO", nssp_valid_states, True),
+        (32, nssp_valid_states, True),
+        (["OH","WA","OO"], nssp_valid_states, True)
     ],
 )
 def test_option_parsing(raw_val, valid_opts, should_fail):
