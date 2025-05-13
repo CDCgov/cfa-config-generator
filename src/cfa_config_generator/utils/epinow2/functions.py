@@ -193,8 +193,6 @@ def validate_args(
     """Checks that user-supplied arguments are valid and returns them
     in a standardized format for downstream use.
     Parameters:
-        task_exclusions: state:disease pair to exclude from model run
-        exclusions: path to exclusions csv
         state: geography to run model
         disease: disease to run
         report_date: date of model run
