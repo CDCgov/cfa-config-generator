@@ -4,7 +4,7 @@ from collections import OrderedDict
 
 import polars as pl
 from azure.identity import DefaultAzureCredential
-from azure.storage.blob import BlobServiceClient, ContainerClient
+from azure.storage.blob import BlobServiceClient, ContainerClient, ContentSettings
 
 from cfa_config_generator.utils.epinow2.constants import azure_storage
 
@@ -207,3 +207,40 @@ def prep_blob_path(blob_path: str) -> tuple[str, str]:
         raise ValueError(f"Container name {container} is empty or just a slash.")
 
     return container, blob
+
+
+def upload_configs(
+    task_configs: list[dict], job_id: str, container_client: ContainerClient
+) -> list[str]:
+    """
+    For the given list of task configurations, upload each to the container client using
+    f"{job_id}/{task['task_id']}.json" as the path in blob.
+
+    Parameters
+    ----------
+    task_configs: list[dict]
+        List of task configurations to upload.
+    job_id: str
+        The job ID to use as the prefix for the blob path.
+    container_client: ContainerClient
+        The instantiated container client to use for uploading the blobs.
+
+    Returns
+    -------
+    list[str]
+        List of blob names that failed to upload.
+    """
+    failed_uploads: list[str] = []
+    for task in task_configs:
+        blob_name = f"{job_id}/{task['task_id']}.json"
+        try:
+            container_client.upload_blob(
+                name=blob_name,
+                data=json.dumps(task, indent=2),
+                overwrite=True,
+                content_settings=ContentSettings(content_type="application/json"),
+            )
+        except Exception:
+            failed_uploads.append(blob_name)
+
+    return failed_uploads

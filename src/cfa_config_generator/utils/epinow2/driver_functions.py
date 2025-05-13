@@ -1,16 +1,16 @@
-import json
 import logging
 from datetime import date
 
 import polars as pl
 from azure.identity import AzureCliCredential
-from azure.storage.blob import BlobServiceClient, ContainerClient, ContentSettings
+from azure.storage.blob import BlobServiceClient, ContainerClient
 
 from cfa_config_generator.utils.azure.auth import obtain_sp_credential
 from cfa_config_generator.utils.azure.storage import (
     instantiate_blob_service_client,
     prep_blob_path,
     read_blob_csv,
+    upload_configs,
 )
 from cfa_config_generator.utils.epinow2.constants import azure_storage
 from cfa_config_generator.utils.epinow2.functions import (
@@ -84,17 +84,23 @@ def generate_config(
         container_client = storage_client.get_container_client(
             container=azure_storage["azure_container_name"]
         )
-        for task in task_configs:
-            blob_name = f"{generated_job_id}/{task['task_id']}.json"
-            container_client.upload_blob(
-                name=blob_name,
-                data=json.dumps(task, indent=2),
-                overwrite=True,
-                content_settings=ContentSettings(content_type="application/json"),
-            )
+        failed_uploads: list[str] = upload_configs(
+            task_configs=task_configs,
+            job_id=generated_job_id,
+            container_client=container_client,
+        )
     except (LookupError, ValueError, Exception) as e:
         logger.error(f"Error pushing to Azure: {e}")
         raise e
+
+    # Check for failed uploads
+    if any(failed_uploads):
+        logger.error(
+            f"Failed to upload the following tasks: {', '.join(failed_uploads)}"
+        )
+        raise ValueError(
+            f"Failed to upload the following tasks: {', '.join(failed_uploads)}"
+        )
 
     logger.info(
         f"Successfully generated configs for job; tasks stored in {generated_job_id} directory."
@@ -230,18 +236,28 @@ def generate_rerun_config(
         container_client = storage_client.get_container_client(
             container=azure_storage["azure_container_name"]
         )
-        for task in task_configs:
-            blob_name = f"{generated_job_id}/{task['task_id']}.json"
-            container_client.upload_blob(
-                name=blob_name,
-                data=json.dumps(task, indent=2),
-                overwrite=True,
-                content_settings=ContentSettings(content_type="application/json"),
-            )
+        failed_uploads: list[str] = upload_configs(
+            task_configs=task_configs,
+            job_id=generated_job_id,
+            container_client=container_client,
+        )
     except (LookupError, ValueError, Exception) as e:
         logger.error(f"Error pushing to Azure: {e}")
         raise e
 
+    # Check for failed uploads
+    if any(failed_uploads):
+        logger.error(
+            f"Failed to upload the following tasks: {', '.join(failed_uploads)}"
+        )
+        raise ValueError(
+            f"Failed to upload the following tasks: {', '.join(failed_uploads)}"
+        )
+
     logger.info(
         f"Successfully generated configs for job; tasks stored in {generated_job_id} directory."
     )
+
+
+def generate_backfill_config():
+    pass
