@@ -26,7 +26,7 @@ def generate_config(
     state: str,
     disease: str,
     report_date: date,
-    reference_dates: list[date],
+    reference_dates: tuple[date, date],
     data_path: str,
     data_container: str,
     production_date: date,
@@ -45,7 +45,7 @@ def generate_config(
         state: geography to run model
         disease: disease to run
         report_date: date of model run
-        reference_dates: list of reference (event) dates
+        reference_dates: tuple of two reference (event) dates
         data_path: path to input data
         data_container: container for input data
         production_date: production date of model run
@@ -111,7 +111,7 @@ def generate_rerun_config(
     state: str,
     disease: str,
     report_date: date,
-    reference_dates: list[date],
+    reference_dates: tuple[date, date],
     data_path: str,
     data_container: str,
     production_date: date,
@@ -132,7 +132,7 @@ def generate_rerun_config(
         state: geography to run model
         disease: disease to run
         report_date: date of model run
-        reference_dates: list of reference (event) dates
+        reference_dates: tuple of two reference (event) dates
         data_path: path to input data
         data_container: container for input data
         production_date: production date of model run

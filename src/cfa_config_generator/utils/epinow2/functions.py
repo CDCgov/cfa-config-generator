@@ -180,7 +180,7 @@ def validate_args(
     state: str,
     disease: str,
     report_date: date,
-    reference_dates: list[date],
+    reference_dates: tuple[date, date],
     data_path: str,
     data_container: str,
     production_date: date,
@@ -196,7 +196,7 @@ def validate_args(
         state: geography to run model
         disease: disease to run
         report_date: date of model run
-        reference_dates: list of reference (event) dates
+        reference_dates: tuple of two reference (event) dates
         data_container: container for input data
         data_path: path to input data
         production_date: production date of model run
