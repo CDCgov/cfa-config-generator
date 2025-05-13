@@ -1,5 +1,6 @@
 import itertools
 import os
+from collections.abc import Iterable
 from datetime import date, datetime, timedelta, timezone
 from typing import Any
 from uuid import UUID, uuid1
@@ -8,8 +9,7 @@ import polars as pl
 
 from cfa_config_generator.utils.epinow2.constants import (
     all_diseases,
-    all_states,
-    nssp_states_omit,
+    nssp_valid_states,
     shared_params,
 )
 
@@ -158,7 +158,9 @@ def generate_tasks_excl_from_data_excl(excl_df: pl.DataFrame) -> str:
     if any(missing_cols):
         raise ValueError(f"data exclusions file missing: {missing_cols}")
 
-    all_set: set[tuple[str, str]] = set(itertools.product(all_states, all_diseases))
+    all_set: set[tuple[str, str]] = set(
+        itertools.product(nssp_valid_states, all_diseases)
+    )
 
     incl_states = excl_df.get_column("state").to_list()
     incl_disease = excl_df.get_column("disease").to_list()
@@ -214,7 +216,7 @@ def validate_args(
             state_excl = [item.split(":")[0] for item in task_pairs]
             disease_excl = [item.split(":")[1] for item in task_pairs]
             for ind_state in state_excl:
-                if ind_state not in all_states:
+                if ind_state not in nssp_valid_states:
                     raise ValueError(f"State {ind_state} not recognized.")
             for ind_disease in disease_excl:
                 if ind_disease not in all_diseases:
@@ -229,21 +231,10 @@ def validate_args(
             raise IndexError(
                 "Task exclusions should be in the form 'state:disease,state:disease'"
             )
-    if state == "all":
-        args_dict["state"] = list(set(all_states) - set(nssp_states_omit))
-    elif state not in all_states:
-        raise ValueError(f"State {state} not recognized.")
-    else:
-        args_dict["state"] = [state]
 
-    if disease == "all":
-        args_dict["disease"] = all_diseases
-    elif disease not in all_diseases:
-        raise ValueError(
-            f"Disease {disease} not recognized. Valid options are 'COVID-19', 'Influenza', or 'RSV'."
-        )
-    else:
-        args_dict["disease"] = [disease]
+    args_dict["state"] = parse_options(state, nssp_valid_states)
+
+    args_dict["disease"] = parse_options(disease, all_diseases)
 
     # Check valid reference_date range relative to report_date
     if not all(isinstance(ref, date) for ref in reference_dates):
@@ -407,3 +398,76 @@ def exclude_task(config_data: list[dict], filters: dict[str, list[str]]) -> list
     ]
 
     return filtered_data
+
+
+def parse_options(
+    raw_input: str | list[str], valid_options: Iterable[str]
+) -> list[str]:
+    """
+    Parses the raw_input and returns a list of options. This is primarily
+    intended to handle parsing of states and diseases
+
+    Parameters:
+    ----------
+        raw_input: str
+            A string representing a single option, a comma-separated list of options,
+            or the string "all" to include all available options..
+
+    Returns:
+    -------
+        list[str]
+            list of options to use.
+
+    Raises:
+    -------
+        ValueError: If the option is not recognized or if the format is invalid.
+    """
+    match raw_input:
+        case "all" | "*":
+            return list(valid_options)
+        case str(o) if "," not in o:
+            # This is a single option as a string
+            o = o.strip()
+            if o not in valid_options:
+                raise ValueError(f"Option {o} not recognized.")
+            return [o]
+        case str(o) if "," in o:
+            # This is a list of options as a string
+            option_list: list[str] = [os.strip() for os in o.split(",")]
+
+            # Perform set diff to catch any invalid options and raise an error
+            invalid_options: set[str] = set(option_list).difference(valid_options)
+            if any(invalid_options):
+                raise ValueError(
+                    (
+                        f"Options {invalid_options} not recognized."
+                        " Valid options are {valid_options}."
+                    )
+                )
+
+            return option_list
+        case list(o):
+            # This is a list of options
+            if not all(isinstance(os, str) for os in o):
+                raise ValueError(
+                    f"All elements in the list must be strings. Got {type(o)} instead."
+                )
+
+            parsed: list[str] = [os.strip() for os in o]
+            invalid_options: set[str] = set(parsed).difference(valid_options)
+            if any(invalid_options):
+                raise ValueError(
+                    (
+                        f"Options {invalid_options} not recognized."
+                        " Valid options are {valid_options}."
+                    )
+                )
+            return o
+        case _:
+            raise ValueError(
+                (
+                    f"Options {raw_input} not recognized. Valid options are 'all', "
+                    " a singleton, or a comma-separated list of options as a string, "
+                    f"or a list of strings. Got {type(raw_input)} instead."
+                )
+            )

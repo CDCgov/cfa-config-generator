@@ -2,15 +2,12 @@ from datetime import date, timedelta
 
 import pytest
 
-from cfa_config_generator.utils.epinow2.constants import (
-    all_diseases,
-    all_states,
-    nssp_states_omit,
-)
+from cfa_config_generator.utils.epinow2.constants import all_diseases, nssp_valid_states
 from cfa_config_generator.utils.epinow2.functions import (
     extract_user_args,
     generate_default_job_id,
     generate_timestamp,
+    parse_options,
     validate_args,
 )
 
@@ -75,19 +72,19 @@ def test_validate_args_default():
         production_date=production_date,
         reference_dates=[min_reference_date, max_reference_date],
         data_path=f"gold/{report_date.isoformat()}.parquet",
-        data_container=None,
+        data_container="test-container",
         job_id="test-job-id",
         as_of_date=as_of_date,
         output_container="test-container",
     )
     assert validated_args == {
-        "state": list(set(all_states) - set(nssp_states_omit)),
-        "disease": all_diseases,
+        "state": list(nssp_valid_states),
+        "disease": list(all_diseases),
         "exclusions": None,
         "reference_dates": [min_reference_date, max_reference_date],
         "report_date": report_date,
         "data_path": f"gold/{report_date.isoformat()}.parquet",
-        "data_container": None,
+        "data_container": "test-container",
         "production_date": date.today(),
         "job_id": "test-job-id",
         "as_of_date": as_of_date,
@@ -105,7 +102,7 @@ def test_invalid_state():
             report_date=today,
             reference_dates=[today - timedelta(days=1), today - timedelta(days=2)],
             data_path="gold/",
-            data_container=None,
+            data_container="test-container",
             production_date=today,
             job_id="test-job-id",
             as_of_date=generate_timestamp(),
@@ -124,7 +121,7 @@ def test_invalid_disease():
             report_date=today,
             reference_dates=[today - timedelta(days=1), today - timedelta(days=2)],
             data_path="gold/",
-            data_container=None,
+            data_container="test-container",
             production_date=today,
             job_id="test-job-id",
             as_of_date=generate_timestamp(),
@@ -149,7 +146,7 @@ def test_invalid_reference_date_logic():
                 today + timedelta(days=2),
             ],
             data_path="gold/",
-            data_container=None,
+            data_container="test-container",
             production_date=today,
             job_id="test-job-id",
             as_of_date=generate_timestamp(),
@@ -171,10 +168,74 @@ def test_invalid_disease_exclusion():
             report_date=today,
             reference_dates=[today - timedelta(days=1), today - timedelta(days=2)],
             data_path="gold/",
-            data_container=None,
+            data_container="test-container",
             production_date=today,
             job_id="test-job-id",
             as_of_date=as_of_date,
             task_exclusions=task_exclusions,
             output_container="test-container",
+        )
+
+
+@pytest.mark.parametrize(
+    argnames="raw_val, valid_opts, should_fail",
+    argvalues=[
+        # Test all
+        ("all", all_diseases, False),
+        ("all", nssp_valid_states, False),
+        # Test multiple
+        ("COVID-19, Influenza", all_diseases, False),
+        ("COVID-19,Influenza", all_diseases, False),
+        ("COVID-19,Influenza,RSV", all_diseases, False),
+        ("WA, CA", nssp_valid_states, False),
+        ("WA,CA   , TX", nssp_valid_states, False),
+        ("WA,CA,TX,NY", nssp_valid_states, False),
+        (["OH ", "WA", "DC"], nssp_valid_states, False),
+        # Test single
+        ("COVID-19", all_diseases, False),
+        ("Influenza", all_diseases, False),
+        ("RSV", all_diseases, False),
+        (" RSV", all_diseases, False),
+        ("COVID-19 ", all_diseases, False),
+        (" COVID-19", all_diseases, False),
+        (" COVID-19 ", all_diseases, False),
+        ("OH", nssp_valid_states, False),
+        ("CA", nssp_valid_states, False),
+        ("WA ", nssp_valid_states, False),
+        (" WA", nssp_valid_states, False),
+        (" WA ", nssp_valid_states, False),
+        # Test failures,
+        ("ZZ,COVID-19", all_diseases, True),
+        ("COVID-19,ZZ", all_diseases, True),
+        ("ZZ,WA", nssp_valid_states, True),
+        ("OH,WA,OO", nssp_valid_states, True),
+        (32, nssp_valid_states, True),
+    ],
+)
+def test_option_parsing(raw_val, valid_opts, should_fail):
+    if should_fail:
+        with pytest.raises(ValueError, match=r"Option?s .+ not recognized"):
+            parse_options(raw_input=raw_val, valid_options=valid_opts)
+        return
+
+    parsed_options: list[str] = parse_options(
+        raw_input=raw_val, valid_options=valid_opts
+    )
+    # Make sure the length of the list is correct
+    if raw_val == "all":
+        assert len(parsed_options) == len(valid_opts), (
+            "Should have correct number of options for 'all' case"
+        )
+    else:
+        # Split the raw_val by commas and check the length
+        split_vals: list[str] = (
+            [opt.strip() for opt in raw_val.split(",")]
+            if isinstance(raw_val, str)
+            else [opt.strip() for opt in raw_val]
+        )
+        assert len(parsed_options) == len(split_vals)
+        # Check that all options are in the validated args
+        unexpected_vals = set(split_vals).difference(valid_opts)
+        assert len(unexpected_vals) == 0, (
+            f"Unexpected values in {raw_val}: {unexpected_vals}"
         )
