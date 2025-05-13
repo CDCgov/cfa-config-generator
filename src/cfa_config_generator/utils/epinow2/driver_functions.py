@@ -34,7 +34,7 @@ def generate_config(
     as_of_date: str,
     output_container: str,
     task_exclusions: str | None = None,
-    exclusions: str | None = None,
+    exclusions: dict | None = None,
 ):
     """
     A function to generate `epinow2` configuration objects based on provided arguments.
