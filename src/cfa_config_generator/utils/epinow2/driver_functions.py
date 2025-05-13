@@ -1,8 +1,9 @@
+import json
 import logging
 from datetime import date
 
 import polars as pl
-from azure.identity import AzureCliCredential
+from azure.identity import AzureCliCredential, DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient, ContainerClient
 
 from cfa_config_generator.utils.azure.auth import obtain_sp_credential
@@ -259,5 +260,109 @@ def generate_rerun_config(
     )
 
 
-def generate_backfill_config():
-    pass
+def generate_backfill_config(
+    state: str,
+    disease: str,
+    report_dates: list[date],
+    reference_dates: list[tuple[date, date]],
+    data_path: str,
+    data_container: str,
+    backfill_name: str,
+    as_of_date: str,
+    output_container: str,
+    task_exclusions: str | None = None,
+):
+    """
+    This function can be seen a like a loop over generate_config for a number of report
+    dates.
+    - It provides the same level of configuration as generate_config
+    - It allows the caller to set the data source location. For this data source, it
+        will search for any existing exclusions files and add them to the matching
+        report date config files, if any.
+    - It will use a unique job ID for each report date to allow the post processor (as
+        it currently exists) to run separately for each report date.
+    - It will take a `name` argument for the backfill run. E.g. the NAME could be
+        "nssp_api_v2" or "epidist_delays". Each job id will be `<name>_<report_date>`.
+    - For a given report date, it will check in blob if that report date has a
+        corresponding exclusions file. If it does, it will add the exclusions file to
+        the config.
+    - It will write an additional metadata file to the config storage container called
+        `backfill/<name>_jobids.json`, and containing a list of all the job ids in the
+        backfill run. This is to allow us to easily find all the job ids for a backfill
+        run later.
+
+    """
+    # Make sure the report_dates and reference_dates are the same length
+    if len(report_dates) != len(reference_dates):
+        raise ValueError("report_dates and reference_dates must be the same length.")
+
+    # For accessing blob
+    bsc: BlobServiceClient = BlobServiceClient(
+        account_url=azure_storage["azure_storage_account_url"],
+        credential=DefaultAzureCredential(),
+    )
+    config_ctr_client: ContainerClient = bsc.get_container_client(
+        container=azure_storage["azure_container_name"]
+    )
+    data_ctr_client: ContainerClient = bsc.get_container_client(
+        container=data_container
+    )
+
+    # For keeping track of which report dates have exclusions files
+    exclusions_dict: dict[date, dict] = {}
+
+    # For each report date, check if there is a corresponding exclusions file
+    for rep_date in report_dates:
+        # Check if the exclusions file exists in the data container
+        blob_name = f"outliers-v2/{rep_date.isoformat()}.csv"
+        blob_client = data_ctr_client.get_blob_client(blob_name)
+        # Check if the blob exists
+        if blob_client.exists():
+            logger.info(f"Exclusions file found for {rep_date.isoformat()}")
+            exclusions_path = f"az://{data_container}/{blob_name}"
+            # Create the dictionary for the exclusions file
+            exclusions_dict[rep_date] = {
+                "path": exclusions_path,
+                "blob_storage_container": data_container,
+            }
+        else:
+            logger.info(f"No exclusions file found for {rep_date.isoformat()}")
+
+    # Create the list of job ids
+    job_ids: list[str] = [
+        f"{backfill_name}_{rep_date.isoformat()}" for rep_date in report_dates
+    ]
+    # For each report date, generate the configs
+    for rep_date, job_id, ref_dates in zip(
+        report_dates, job_ids, reference_dates, strict=True
+    ):
+        # Generate the config for this report date
+        generate_config(
+            state=state,
+            disease=disease,
+            report_date=rep_date,
+            reference_dates=ref_dates,
+            data_path=data_path,
+            data_container=data_container,
+            production_date=rep_date,
+            job_id=job_id,
+            as_of_date=as_of_date,
+            output_container=output_container,
+            task_exclusions=task_exclusions,
+            exclusions=exclusions_dict.get(rep_date, None),
+        )
+        logger.info(
+            f"Successfully generated config for {job_id} with report date {rep_date.isoformat()}"
+        )
+
+    # Write the metadata file to the config storage container
+    metadata_path = f"backfill/{backfill_name}_jobids.json"
+    config_ctr_client.upload_blob(
+        name=metadata_path,
+        data=json.dumps(job_ids, indent=2),
+        overwrite=True,
+        content_settings={"content_type": "application/json"},
+    )
+    logger.info(
+        f"Successfully wrote metadata file to {metadata_path} in {azure_storage['azure_container_name']}."
+    )
