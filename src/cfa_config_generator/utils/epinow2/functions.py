@@ -188,7 +188,7 @@ def validate_args(
     as_of_date: str,
     output_container: str,
     task_exclusions: str | None = None,
-    exclusions: str | None = None,
+    exclusions: dict | None = None,
 ) -> dict:
     """Checks that user-supplied arguments are valid and returns them
     in a standardized format for downstream use.
@@ -205,6 +205,9 @@ def validate_args(
         job_id: unique identifier for job
         as_of_date: iso format timestamp of model run
         output_container: Azure container to store output
+        task_exclusions: comma separated state:disease pairs to exclude
+        exclusions: A dictionary with `path` and `blob_storage_container` keys
+        to specify the path to the exclusions file and its container.
     Returns:
         A dictionary of sanitized arguments.
     """

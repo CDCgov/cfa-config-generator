@@ -3,9 +3,8 @@ import logging
 from datetime import date
 
 import polars as pl
-from azure.identity._credentials.azure_cli import AzureCliCredential
-from azure.storage.blob import ContainerClient, ContentSettings
-from azure.storage.blob._blob_service_client import BlobServiceClient
+from azure.identity import AzureCliCredential
+from azure.storage.blob import BlobServiceClient, ContainerClient, ContentSettings
 
 from cfa_config_generator.utils.azure.auth import obtain_sp_credential
 from cfa_config_generator.utils.azure.storage import (
