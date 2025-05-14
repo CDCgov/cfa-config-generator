@@ -45,7 +45,7 @@ def generate_config(
     Parameters:
         state: geography to run model
         disease: disease to run
-        report_date: date of model run
+        report_date: date of snapshot to use for model run
         reference_dates: length two tuple of the minimum and maximum reference (event) dates
         data_path: path to input data
         data_container: container for input data
@@ -132,7 +132,7 @@ def generate_rerun_config(
     Parameters:
         state: geography to run model
         disease: disease to run
-        report_date: date of model run
+        report_date: date of snapshot to use for model run
         reference_dates: tuple of two reference (event) dates
         data_path: path to input data
         data_container: container for input data
