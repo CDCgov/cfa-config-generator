@@ -46,7 +46,7 @@ def generate_config(
         state: geography to run model
         disease: disease to run
         report_date: date of model run
-        reference_dates: tuple of two reference (event) dates
+        reference_dates: length two tuple of the minimum and maximum reference (event) dates
         data_path: path to input data
         data_container: container for input data
         production_date: production date of model run
