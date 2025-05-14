@@ -43,18 +43,49 @@ def generate_config(
     and writes them to Blob Storage.
 
     Parameters:
-        state: geography to run model
-        disease: disease to run
-        report_date: date of snapshot to use for model run
-        reference_dates: length two tuple of the minimum and maximum reference (event) dates
-        data_path: path to input data
-        data_container: container for input data
-        production_date: production date of model run
-        job_id: unique identifier for job
-        as_of_date: iso format timestamp of model run
-        output_container: Azure container to store output
-        task_exclusions: state:disease pair to exclude from model run
-        exclusions: path to exclusions csv
+    ----------
+    state: str
+        Geography to run model
+    disease: str
+        Disease to run
+    report_date: date
+        Date of snapshot to use for model run
+    reference_dates: tuple[date, date]
+        Length two tuple of the minimum and maximum reference (event) dates
+    data_path: str
+        Path to input data
+    data_container: str
+        Blob storage container for input data
+    production_date: date
+        Production date of model run
+    job_id: str
+        Unique identifier for job
+    as_of_date: str
+        ISO format timestamp specifying the timestamp as of which to fetch
+        the parameters for. This should usually be the same as the report date.
+    output_container: str
+        Blob storage container to store output
+    task_exclusions: str | None
+        Comma separated state:disease pair to exclude from model run
+    exclusions: dict | None
+        Dictionary with keys 'path' and 'blob_storage_container' for the exclusions file.
+        If provided, this will be used to generate the task exclusions string.
+
+    Returns:
+    -------
+    None
+        The function writes the generated configuration objects to Blob Storage.
+
+    Raises:
+    ------
+    ValueError
+        If the report_dates and reference_dates are not the same length.
+    LookupError
+        If there is an error obtaining the storage client.
+    ValueError
+        If there is an error pushing the configuration objects to Azure Blob Storage.
+    Exception
+        If there is an error during the process.
     """
     # Validate and sanitize args directly
     sanitized_args = validate_args(
@@ -138,10 +169,12 @@ def generate_rerun_config(
         data_container: container for input data
         production_date: production date of model run
         job_id: unique identifier for job
-        as_of_date: iso format timestamp of model run
+        as_of_date: iso format timestamp specifying the timestamp as of which to fetch
+            the parameters for. This should usually be the same as the report date.
         output_container: Azure container to store output
-        data_exclusions_path: Path to the data exclusion CSV file. If in Blob, use form `az://<container-name>/<path>`.
-                              Defaults to `az://nssp-etl/outliers-v2/<report_date>.csv` if None or empty.
+        data_exclusions_path: Path to the data exclusion CSV file. If in Blob, use form
+        `az://<container-name>/<path>`. Defaults to
+        `az://nssp-etl/outliers-v2/<report_date>.csv` if None or empty.
     """
     # Handle default data_exclusions_path
     excl_path = data_exclusions_path
@@ -292,6 +325,7 @@ def generate_backfill_config(
         run later.
 
     """
+    # === Set up =======================================================================
     # Make sure the report_dates and reference_dates are the same length
     if len(report_dates) != len(reference_dates):
         raise ValueError("report_dates and reference_dates must be the same length.")
@@ -308,6 +342,7 @@ def generate_backfill_config(
         container=data_container
     )
 
+    # === Managing data exclusions =====================================================
     # For keeping track of which report dates have exclusions files
     exclusions_dict: dict[date, dict] = {}
 
