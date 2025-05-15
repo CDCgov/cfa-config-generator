@@ -326,7 +326,7 @@ def generate_backfill_config(
     disease: str,
     report_dates: list[date],
     reference_date_time_span: str,
-    data_path: str,
+    data_paths: list[str],
     data_container: str,
     backfill_name: str,
     as_of_date: str,
@@ -365,8 +365,9 @@ def generate_backfill_config(
         the report date. This should be formatted following the conventions of polars
         `.dt.offset_by()`. Usually, this will be a string like "8w" or "1d" (for 8 weeks
         or 1 day).
-    data_path: str
-        Path to input data
+    data_paths: list[str]
+        A list of paths to the input data for each report date. This is required even if
+        all runs will use the same data path.
     data_container: str
         Blob storage container for input data
     backfill_name: str
@@ -381,6 +382,11 @@ def generate_backfill_config(
         Comma separated state:disease pair to exclude from model run.
     """
     # === Set up =======================================================================
+    if len(report_dates) != len(data_paths):
+        raise ValueError(
+            "The number of report dates must match the number of data paths."
+        )
+
     # Create the list of reference dates based on the reference date time span and the
     # report dates. Each report date will have a tuple of reference dates.
     reference_dates: list[tuple[date, date]] = generate_ref_date_tuples(
@@ -424,8 +430,8 @@ def generate_backfill_config(
         f"{backfill_name}_{rep_date.isoformat()}" for rep_date in report_dates
     ]
     # For each report date, generate the configs
-    for rep_date, job_id, ref_dates in zip(
-        report_dates, job_ids, reference_dates, strict=True
+    for rep_date, job_id, ref_dates, data_path in zip(
+        report_dates, job_ids, reference_dates, data_paths, strict=True
     ):
         # Generate the config for this report date
         generate_config(
