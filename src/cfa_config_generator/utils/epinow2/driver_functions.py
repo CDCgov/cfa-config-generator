@@ -4,7 +4,13 @@ from datetime import date
 
 import polars as pl
 from azure.identity import AzureCliCredential, DefaultAzureCredential
-from azure.storage.blob import BlobClient, BlobServiceClient, ContainerClient
+from azure.storage.blob import (
+    BlobClient,
+    BlobServiceClient,
+    ContainerClient,
+    ContentSettings,
+)
+from tqdm import tqdm
 
 from cfa_config_generator.utils.azure.auth import obtain_sp_credential
 from cfa_config_generator.utils.azure.storage import (
@@ -329,7 +335,7 @@ def generate_backfill_config(
     data_paths: list[str],
     data_container: str,
     backfill_name: str,
-    as_of_date: str,
+    as_of_dates: list[str],
     output_container: str,
     task_exclusions: str | None = None,
 ):
@@ -373,18 +379,24 @@ def generate_backfill_config(
     backfill_name: str
         Name of the backfill run. This will be used to generate the job IDs for each
         report date in the format `<backfill_name>_<report_date>`.
-    as_of_date: str
-        ISO format timestamp specifying the timestamp as of which to fetch
-        the parameters for. This should usually be the same as the report date.
+    as_of_dates: list[str]
+        A list of ISO format timestamps specifying the time as of which to fetch
+        the parameters for. Note that what the times are will depend on your use case.
+        If you want to see the model working on the parameters known at the time of a
+        given report date, it should be the same as the report date. If you want to
+        see the model working on the parameters known at the current time, this should
+        be the current time. This should be a list of the same length as the report dates.
     output_container: str
         Blob storage container to store output.
     task_exclusions: str | None
         Comma separated state:disease pair to exclude from model run.
     """
     # === Set up =======================================================================
-    if len(report_dates) != len(data_paths):
+    if not len(report_dates) == len(data_paths) == len(as_of_dates):
+        lens = [len(report_dates), len(data_paths), len(as_of_dates)]
         raise ValueError(
-            "The number of report dates must match the number of data paths."
+            f"report_dates, data_paths, and as_of_dates must all be the same length. "
+            f"Got lengths {lens} respectively.."
         )
 
     # Create the list of reference dates based on the reference date time span and the
@@ -410,6 +422,7 @@ def generate_backfill_config(
     exclusions_dict: dict[date, dict] = {}
 
     # For each report date, check if there is a corresponding exclusions file
+    logger.info("Checking for exclusions files...")
     for rep_date in report_dates:
         # Check if the exclusions file exists in the data container
         blob_name = f"outliers-v2/{rep_date.isoformat()}.csv"
@@ -429,9 +442,20 @@ def generate_backfill_config(
     job_ids: list[str] = [
         f"{backfill_name}_{rep_date.isoformat()}" for rep_date in report_dates
     ]
-    # For each report date, generate the configs
-    for rep_date, job_id, ref_dates, data_path in zip(
-        report_dates, job_ids, reference_dates, data_paths, strict=True
+
+    # For each report date, generate the configs.
+    # This can take a bit, so use a progress bar.
+    for rep_date, job_id, ref_dates, data_path, as_of_date in tqdm(
+        zip(
+            report_dates,
+            job_ids,
+            reference_dates,
+            data_paths,
+            as_of_dates,
+            strict=True,
+        ),
+        total=len(report_dates),
+        desc="Generating configs",
     ):
         # Generate the config for this report date
         generate_config(
@@ -458,7 +482,7 @@ def generate_backfill_config(
         name=metadata_path,
         data=json.dumps(job_ids, indent=2),
         overwrite=True,
-        content_settings={"content_type": "application/json"},
+        content_settings=ContentSettings(content_type="application/json"),
     )
     logger.info(
         f"Successfully wrote metadata file to {metadata_path} in {azure_storage['azure_container_name']}."
