@@ -4,7 +4,7 @@ from datetime import date
 
 import polars as pl
 from azure.identity import AzureCliCredential, DefaultAzureCredential
-from azure.storage.blob import BlobServiceClient, ContainerClient
+from azure.storage.blob import BlobClient, BlobServiceClient, ContainerClient
 
 from cfa_config_generator.utils.azure.auth import obtain_sp_credential
 from cfa_config_generator.utils.azure.storage import (
@@ -15,6 +15,7 @@ from cfa_config_generator.utils.azure.storage import (
 )
 from cfa_config_generator.utils.epinow2.constants import azure_storage
 from cfa_config_generator.utils.epinow2.functions import (
+    generate_ref_date_tuples,
     generate_task_configs,
     generate_tasks_excl_from_data_excl,
     validate_args,
@@ -42,7 +43,7 @@ def generate_config(
     This function validates the arguments, generates configuration objects,
     and writes them to Blob Storage.
 
-    Parameters:
+    Parameters
     ----------
     state: str
         Geography to run model
@@ -71,12 +72,12 @@ def generate_config(
         Dictionary with keys 'path' and 'blob_storage_container' for the exclusions file.
         If provided, this will be used to generate the task exclusions string.
 
-    Returns:
+    Returns
     -------
     None
         The function writes the generated configuration objects to Blob Storage.
 
-    Raises:
+    Raises
     ------
     ValueError
         If the report_dates and reference_dates are not the same length.
@@ -160,21 +161,48 @@ def generate_rerun_config(
     generates configuration objects for those tasks, validates them, and writes them
     to Blob Storage.
 
-    Parameters:
-        state: geography to run model
-        disease: disease to run
-        report_date: date of snapshot to use for model run
-        reference_dates: tuple of two reference (event) dates
-        data_path: path to input data
-        data_container: container for input data
-        production_date: production date of model run
-        job_id: unique identifier for job
-        as_of_date: iso format timestamp specifying the timestamp as of which to fetch
-            the parameters for. This should usually be the same as the report date.
-        output_container: Azure container to store output
-        data_exclusions_path: Path to the data exclusion CSV file. If in Blob, use form
+    Parameters
+    ----------
+    state: str
+        Geography to run model
+    disease: str
+        Disease to run
+    report_date: date
+        Date of snapshot to use for model run
+    reference_dates: tuple[date, date]
+        Length two tuple of the minimum and maximum reference (event) dates
+    data_path: str
+        Path to input data
+    data_container: str
+        Blob storage container for input data
+    production_date: date
+        Production date of model run
+    job_id: str
+        Unique identifier for job
+    as_of_date: str
+        ISO format timestamp specifying the timestamp as of which to fetch
+        the parameters for. This should usually be the same as the report date.
+    output_container: str
+        Blob storage container to store output
+    data_exclusions_path: str | None
+        Path to the data exclusion CSV file. If in Blob, use form
         `az://<container-name>/<path>`. Defaults to
         `az://nssp-etl/outliers-v2/<report_date>.csv` if None or empty.
+    Returns
+    -------
+    None
+        The function writes the generated configuration objects to Blob Storage.
+
+    Raises
+    ------
+    ValueError
+        If the report_dates and reference_dates are not the same length.
+    LookupError
+        If there is an error obtaining the storage client.
+    ValueError
+        If there is an error pushing the configuration objects to Azure Blob Storage.
+    Exception
+        If there is an error during the process.
     """
     # Handle default data_exclusions_path
     excl_path = data_exclusions_path
@@ -297,7 +325,7 @@ def generate_backfill_config(
     state: str,
     disease: str,
     report_dates: list[date],
-    reference_dates: list[tuple[date, date]],
+    reference_date_time_span: str,
     data_path: str,
     data_container: str,
     backfill_name: str,
@@ -324,11 +352,40 @@ def generate_backfill_config(
         backfill run. This is to allow us to easily find all the job ids for a backfill
         run later.
 
+    Parameters
+    ----------
+    state: str
+        Geography(ies) to run model
+    disease: str
+        Disease(s) to run
+    report_dates: list[date]
+        List of snapshots to use for model run
+    reference_date_time_span: str
+        A string representing the time span for the earliest reference date relative to
+        the report date. This should be formatted following the conventions of polars
+        `.dt.offset_by()`. Usually, this will be a string like "8w" or "1d" (for 8 weeks
+        or 1 day).
+    data_path: str
+        Path to input data
+    data_container: str
+        Blob storage container for input data
+    backfill_name: str
+        Name of the backfill run. This will be used to generate the job IDs for each
+        report date in the format `<backfill_name>_<report_date>`.
+    as_of_date: str
+        ISO format timestamp specifying the timestamp as of which to fetch
+        the parameters for. This should usually be the same as the report date.
+    output_container: str
+        Blob storage container to store output.
+    task_exclusions: str | None
+        Comma separated state:disease pair to exclude from model run.
     """
     # === Set up =======================================================================
-    # Make sure the report_dates and reference_dates are the same length
-    if len(report_dates) != len(reference_dates):
-        raise ValueError("report_dates and reference_dates must be the same length.")
+    # Create the list of reference dates based on the reference date time span and the
+    # report dates. Each report date will have a tuple of reference dates.
+    reference_dates: list[tuple[date, date]] = generate_ref_date_tuples(
+        report_dates=report_dates, delta=reference_date_time_span
+    )
 
     # For accessing blob
     bsc: BlobServiceClient = BlobServiceClient(
@@ -350,14 +407,13 @@ def generate_backfill_config(
     for rep_date in report_dates:
         # Check if the exclusions file exists in the data container
         blob_name = f"outliers-v2/{rep_date.isoformat()}.csv"
-        blob_client = data_ctr_client.get_blob_client(blob_name)
+        blob_client: BlobClient = data_ctr_client.get_blob_client(blob_name)
         # Check if the blob exists
         if blob_client.exists():
             logger.info(f"Exclusions file found for {rep_date.isoformat()}")
-            exclusions_path = f"az://{data_container}/{blob_name}"
             # Create the dictionary for the exclusions file
             exclusions_dict[rep_date] = {
-                "path": exclusions_path,
+                "path": blob_name,
                 "blob_storage_container": data_container,
             }
         else:

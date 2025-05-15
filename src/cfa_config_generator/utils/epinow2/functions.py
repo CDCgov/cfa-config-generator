@@ -475,44 +475,40 @@ def parse_options(
             )
 
 
-def gen_ref_date_tuples(
+def generate_ref_date_tuples(
     report_dates: list[date], delta: str = "-8w"
 ) -> list[tuple[date, date]]:
     """
     Generates a list of tuples of reference dates based on the report dates and a time
     delta.
 
-    Parameters:
+    Parameters
     ----------
-        report_dates: list[date]
-            A list of report dates to generate reference dates from.
-        delta: str
-            A string in the format used by polars `dt.offset_by()` to specify the time
-            delta. See the polars documentation for more details.
-            https://docs.pola.rs/api/python/stable/reference/series/api/polars.Series.dt.offset_by.html
-            This will go backwards in time from the report date regardless of if the
-            string is positive or negative. For example, if the delta is "1w", it will
-            subtract 1 week from the report date. If the delta is "-1w", it will subtract
-            1 week from the report date as well. This is because the reference date is
-            always before the report date.
+    report_dates: list[date]
+        A list of report dates to generate reference dates from.
+    delta: str
+        A string in the format used by polars `dt.offset_by()` to specify the time
+        delta. See the polars documentation for more details.
+        https://docs.pola.rs/api/python/stable/reference/series/api/polars.Series.dt.offset_by.html
+        This will go backwards in time from the report date regardless of if the
+        string is positive or negative. For example, if the delta is "1w", it will
+        subtract 1 week from the report date. If the delta is "-1w", it will subtract
+        1 week from the report date as well. This is because the reference date is
+        always before the report date.
 
-    Returns:
+    Returns
     -------
-        list[tuple[date, date]]
-            A list of tuples, where each tuple contains a report date and its
-            corresponding min and max reference dates.
+    list[tuple[date, date]]
+        A list of tuples, where each tuple contains a report date and its
+        corresponding min and max reference dates.
     """
     # Make sure the delta is always negative
     if not delta.startswith("-"):
         delta = "-" + delta
 
-    df: pl.DataFrame = (
-        pl.DataFrame(dict(report_date=report_dates))
-        .with_columns(
-            max_ref_date=pl.col.report_date.dt.offset_by("-1d"),
-            min_ref_date=pl.col.report_date.dt.offset_by(delta),
-        )
-        .select("max_ref_date", "min_ref_date")
+    df: pl.DataFrame = pl.DataFrame(dict(report_date=report_dates)).select(
+        max_ref_date=pl.col.report_date.dt.offset_by("-1d"),
+        min_ref_date=pl.col.report_date.dt.offset_by(delta),
     )
 
     return list(zip(df["max_ref_date"], df["min_ref_date"]))

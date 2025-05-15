@@ -9,7 +9,7 @@ from cfa_config_generator.utils.epinow2.constants import (
     nssp_states_omit,
 )
 from cfa_config_generator.utils.epinow2.functions import (
-    gen_ref_date_tuples,
+    generate_ref_date_tuples,
     generate_task_configs,
     generate_timestamp,
     validate_args,
@@ -131,5 +131,5 @@ def test_gen_ref_date_tuples(report_dates, time_span, expected_ref_dates):
     Tests that the reference dates are generated correctly for a list of report dates
     and a time span.
     """
-    got = gen_ref_date_tuples(report_dates=report_dates, delta=time_span)
+    got = generate_ref_date_tuples(report_dates=report_dates, delta=time_span)
     assert expected_ref_dates == got
