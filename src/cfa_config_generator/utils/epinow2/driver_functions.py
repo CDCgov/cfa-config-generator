@@ -314,12 +314,11 @@ def generate_rerun_config(
 
     # Check for failed uploads
     if any(failed_uploads):
-        logger.error(
+        upload_fail_message = (
             f"Failed to upload the following tasks: {', '.join(failed_uploads)}"
         )
-        raise ValueError(
-            f"Failed to upload the following tasks: {', '.join(failed_uploads)}"
-        )
+        logger.error(upload_fail_message)
+        raise ValueError(upload_fail_message)
 
     logger.info(
         f"Successfully generated configs for job; tasks stored in {generated_job_id} directory."
