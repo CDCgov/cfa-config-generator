@@ -134,7 +134,9 @@ def generate_config(
 
     # Check for failed uploads
     if any(failed_uploads):
-        upload_fail_message = f"Failed to upload the following tasks: {', '.join(failed_uploads)}"
+        upload_fail_message = (
+            f"Failed to upload the following tasks: {', '.join(failed_uploads)}"
+        )
         logger.error(upload_fail_message)
         raise ValueError(upload_fail_message)
 
