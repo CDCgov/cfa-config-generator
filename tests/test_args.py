@@ -1,8 +1,9 @@
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 
 import pytest
 
 from cfa_config_generator.utils.epinow2.constants import all_diseases, nssp_valid_states
+from cfa_config_generator.utils.epinow2.driver_functions import generate_backfill_config
 from cfa_config_generator.utils.epinow2.functions import (
     extract_user_args,
     generate_default_job_id,
@@ -238,4 +239,41 @@ def test_option_parsing(raw_val, valid_opts, should_fail):
         unexpected_vals = set(split_vals).difference(valid_opts)
         assert len(unexpected_vals) == 0, (
             f"Unexpected values in {raw_val}: {unexpected_vals}"
+        )
+
+
+def test_generate_backfill_bad_lists():
+    """
+    Tests that we error out when we hand lists of different lengths to the backfill
+    function.
+    """
+    state = "all"
+    disease = "all"
+    reference_date_time_span = "8w"
+    data_container = "nssp-etl"
+    backfill_name = "nate-backfill-test"
+    output_container = "rt-epinow2-config"
+    report_dates: list[date] = [
+        date(2025, 5, 14) - timedelta(weeks=i) for i in range(5)
+    ]
+    data_paths: list[str] = [
+        f"gold/{date.isoformat()}.parquet" for date in report_dates
+    ][:-1]
+    as_of_dates: list[datetime] = [datetime.now(timezone.utc).isoformat()] * len(
+        report_dates
+    )
+    with pytest.raises(
+        ValueError,
+        match="report_dates, data_paths, and as_of_dates must all be the same length",
+    ):
+        generate_backfill_config(
+            state=state,
+            disease=disease,
+            report_dates=report_dates,
+            reference_date_time_span=reference_date_time_span,
+            data_paths=data_paths,
+            data_container=data_container,
+            backfill_name=backfill_name,
+            as_of_dates=as_of_dates,
+            output_container=output_container,
         )

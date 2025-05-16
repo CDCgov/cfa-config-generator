@@ -180,7 +180,7 @@ def validate_args(
     state: str,
     disease: str,
     report_date: date,
-    reference_dates: list[date],
+    reference_dates: tuple[date, date],
     data_path: str,
     data_container: str,
     production_date: date,
@@ -188,23 +188,25 @@ def validate_args(
     as_of_date: str,
     output_container: str,
     task_exclusions: str | None = None,
-    exclusions: str | None = None,
+    exclusions: dict | None = None,
 ) -> dict:
     """Checks that user-supplied arguments are valid and returns them
     in a standardized format for downstream use.
     Parameters:
-        task_exclusions: state:disease pair to exclude from model run
-        exclusions: path to exclusions csv
         state: geography to run model
         disease: disease to run
         report_date: date of model run
-        reference_dates: list of reference (event) dates
+        reference_dates: Length two tuple of the minimum and maximum reference (event) dates
         data_container: container for input data
         data_path: path to input data
         production_date: production date of model run
         job_id: unique identifier for job
-        as_of_date: iso format timestamp of model run
+        as_of_date: iso format timestamp specifying the timestamp as of which to fetch
+            the parameters for. This should usually be the same as the report date.
         output_container: Azure container to store output
+        task_exclusions: comma separated state:disease pairs to exclude
+        exclusions: A dictionary with `path` and `blob_storage_container` keys
+        to specify the path to the exclusions file and its container.
     Returns:
         A dictionary of sanitized arguments.
     """
@@ -471,3 +473,42 @@ def parse_options(
                     f"or a list of strings. Got {type(raw_input)} instead."
                 )
             )
+
+
+def generate_ref_date_tuples(
+    report_dates: list[date], delta: str = "-8w"
+) -> list[tuple[date, date]]:
+    """
+    Generates a list of tuples of reference dates based on the report dates and a time
+    delta.
+
+    Parameters
+    ----------
+    report_dates: list[date]
+        A list of report dates to generate reference dates from.
+    delta: str
+        A string in the format used by polars `dt.offset_by()` to specify the time
+        delta. See the polars documentation for more details.
+        https://docs.pola.rs/api/python/stable/reference/series/api/polars.Series.dt.offset_by.html
+        This will go backwards in time from the report date regardless of if the
+        string is positive or negative. For example, if the delta is "1w", it will
+        subtract 1 week from the report date. If the delta is "-1w", it will subtract
+        1 week from the report date as well. This is because the reference date is
+        always before the report date.
+
+    Returns
+    -------
+    list[tuple[date, date]]
+        A list of tuples, where each tuple contains a report date and its
+        corresponding min and max reference dates.
+    """
+    # Make sure the delta is always negative
+    if not delta.startswith("-"):
+        delta = "-" + delta
+
+    df: pl.DataFrame = pl.DataFrame(dict(report_date=report_dates)).select(
+        max_ref_date=pl.col.report_date.dt.offset_by("-1d"),
+        min_ref_date=pl.col.report_date.dt.offset_by(delta),
+    )
+
+    return list(zip(df["max_ref_date"], df["min_ref_date"]))
