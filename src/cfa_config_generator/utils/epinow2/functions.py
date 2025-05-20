@@ -248,6 +248,16 @@ def validate_args(
             "Invalid reference_date. Ensure all reference_dates are on or before the report date."
         )
 
+    # Make sure the as_of_date is a string, and convert it to one if not
+    if isinstance(as_of_date, date):
+        as_of_date = as_of_date.isoformat()
+    elif isinstance(as_of_date, datetime):
+        as_of_date = as_of_date.date().isoformat()
+    elif not isinstance(as_of_date, str):
+        raise ValueError(
+            f"as_of_date must be a string. Got {type(as_of_date)} instead."
+        )
+
     args_dict["reference_dates"] = reference_dates
     args_dict["report_date"] = report_date
     args_dict["data_path"] = data_path
