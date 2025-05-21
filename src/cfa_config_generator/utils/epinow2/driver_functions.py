@@ -336,7 +336,7 @@ def generate_backfill_config(
     as_of_dates: list[str],
     output_container: str,
     task_exclusions: str | None = None,
-):
+) -> list[str]:
     """
     This function can be seen a like a loop over generate_config for a number of report
     dates.
@@ -388,6 +388,12 @@ def generate_backfill_config(
         Blob storage container to store output.
     task_exclusions: str | None
         Comma separated state:disease pair to exclude from model run.
+
+    Returns
+    -------
+    list[str]
+        A list of job IDs for each report date in the backfill run. This is also written
+        to the metadata file in the config storage container.
     """
     # === Set up =======================================================================
     if not len(report_dates) == len(data_paths) == len(as_of_dates):
@@ -485,3 +491,5 @@ def generate_backfill_config(
     logger.info(
         f"Successfully wrote metadata file to {metadata_path} in {azure_storage['azure_container_name']}."
     )
+
+    return job_ids
