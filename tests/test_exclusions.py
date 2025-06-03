@@ -49,7 +49,7 @@ def test_exclusions():
         exclusions=None,
     )
     task_configs, _ = generate_task_configs(**validated_args)
-    remaining_configs = 150
+    remaining_configs = 153
     assert len(task_configs) == remaining_configs
 
 
@@ -76,7 +76,7 @@ def test_single_exclusion():
         exclusions=None,
     )
     task_configs, _ = generate_task_configs(**validated_args)
-    remaining_configs = 152
+    remaining_configs = 155
     assert len(task_configs) == remaining_configs
 
 
