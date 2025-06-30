@@ -47,6 +47,7 @@ def test_extract_user_args(monkeypatch):
         "job_id": generate_default_job_id(as_of_date=as_of_date),
         "as_of_date": as_of_date,
         "output_container": "test-container",
+        "facility_active_proportion": 1.0,
     }
 
     extracted_args = extract_user_args(as_of_date=as_of_date)
@@ -68,7 +69,6 @@ def test_validate_args_default():
     validated_args = validate_args(
         state="all",
         disease="all",
-        exclusions=None,
         report_date=report_date,
         production_date=production_date,
         reference_dates=[min_reference_date, max_reference_date],
@@ -77,6 +77,8 @@ def test_validate_args_default():
         job_id="test-job-id",
         as_of_date=as_of_date,
         output_container="test-container",
+        facility_active_proportion=1.0,
+        exclusions=None,
     )
     assert validated_args == {
         "state": list(nssp_valid_states),
@@ -90,6 +92,7 @@ def test_validate_args_default():
         "job_id": "test-job-id",
         "as_of_date": as_of_date,
         "output_container": "test-container",
+        "facility_active_proportion": 1.0,
     }
 
 
@@ -108,6 +111,7 @@ def test_invalid_state():
             job_id="test-job-id",
             as_of_date=generate_timestamp(),
             output_container="test-container",
+            facility_active_proportion=1.0,
         )
 
 
@@ -127,6 +131,7 @@ def test_invalid_disease():
             job_id="test-job-id",
             as_of_date=generate_timestamp(),
             output_container="test-container",
+            facility_active_proportion=1.0,
         )
 
 
@@ -152,6 +157,7 @@ def test_invalid_reference_date_logic():
             job_id="test-job-id",
             as_of_date=generate_timestamp(),
             output_container="test-container",
+            facility_active_proportion=1.0,
         )
 
 
@@ -173,8 +179,9 @@ def test_invalid_disease_exclusion():
             production_date=today,
             job_id="test-job-id",
             as_of_date=as_of_date,
-            task_exclusions=task_exclusions,
             output_container="test-container",
+            facility_active_proportion=1.0,
+            task_exclusions=task_exclusions,
         )
 
 
@@ -276,4 +283,5 @@ def test_generate_backfill_bad_lists():
             backfill_name=backfill_name,
             as_of_dates=as_of_dates,
             output_container=output_container,
+            facility_active_proportion=1.0,
         )

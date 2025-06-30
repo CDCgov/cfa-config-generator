@@ -41,6 +41,7 @@ def generate_config(
     job_id: str,
     as_of_date: str,
     output_container: str,
+    facility_active_proportion: float,
     task_exclusions: str | None = None,
     exclusions: dict | None = None,
 ):
@@ -77,6 +78,9 @@ def generate_config(
     exclusions: dict | None
         Dictionary with keys 'path' and 'blob_storage_container' for the exclusions file.
         If provided, this will be used to generate the task exclusions string.
+    facility_active_proportion: float
+        Minimum proportion of days a facility must be active during the modeling period.
+        Must be a number between 0 and 1.
 
     Returns
     -------
@@ -108,6 +112,7 @@ def generate_config(
         output_container=output_container,
         task_exclusions=task_exclusions,
         exclusions=exclusions,
+        facility_active_proportion=facility_active_proportion,
     )
 
     # Generate task-specific configs
@@ -156,6 +161,7 @@ def generate_rerun_config(
     job_id: str,
     as_of_date: str,
     output_container: str,
+    facility_active_proportion: float,
     data_exclusions_path: str | None = None,
 ):
     """
@@ -193,6 +199,9 @@ def generate_rerun_config(
         Path to the data exclusion CSV file. If in Blob, use form
         `az://<container-name>/<path>`. Defaults to
         `az://nssp-etl/outliers-v2/<report_date>.csv` if None or empty.
+    facility_active_proportion: float
+        Minimum proportion of days a facility must be active during the modeling period.
+        Must be a number between 0 and 1.
     Returns
     -------
     None
@@ -293,6 +302,7 @@ def generate_rerun_config(
         output_container=output_container,
         task_exclusions=task_excl_str,
         exclusions=excl_field,
+        facility_active_proportion=facility_active_proportion,
     )
 
     # Generate task-specific configs
@@ -335,6 +345,7 @@ def generate_backfill_config(
     backfill_name: str,
     as_of_dates: list[str],
     output_container: str,
+    facility_active_proportion: float,
     task_exclusions: str | None = None,
 ) -> list[str]:
     """
@@ -388,6 +399,9 @@ def generate_backfill_config(
         Blob storage container to store output.
     task_exclusions: str | None
         Comma separated state:disease pair to exclude from model run.
+    facility_active_proportion: float
+        Minimum proportion of days a facility must be active during the modeling period.
+        Must be a number between 0 and 1.
 
     Returns
     -------
@@ -475,6 +489,7 @@ def generate_backfill_config(
             output_container=output_container,
             task_exclusions=task_exclusions,
             exclusions=exclusions_dict.get(rep_date, None),
+            facility_active_proportion=facility_active_proportion,
         )
         logger.info(
             f"Successfully generated config for {job_id} with report date {rep_date.isoformat()}"
