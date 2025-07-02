@@ -80,7 +80,7 @@ def generate_config(
         If provided, this will be used to generate the task exclusions string.
     facility_active_proportion: float
         Minimum proportion of days a facility must be active during the modeling period.
-        Must be a number between 0 and 1.
+        Must be a number between 0 and 1 (inclusive).
 
     Returns
     -------
