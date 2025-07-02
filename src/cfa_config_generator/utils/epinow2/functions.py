@@ -365,7 +365,9 @@ def generate_task_configs(
         output_container: Azure container for output
         task_exclusions: dictionary of state:disease pairs to exclude
         exclusions: a path to exclusions csv
-        facility_active_proportion: proportion of facilities that are active
+        facility_active_proportion: Minimum proportion of days a facility must be active
+            during the modeling period. Must be a number between 0 and 1.
+
     Returns:
         A list of configuration objects and the job_id.
     """
