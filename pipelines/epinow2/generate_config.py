@@ -29,4 +29,5 @@ if __name__ == "__main__":
         output_container=user_args["output_container"],
         task_exclusions=user_args.get("task_exclusions"),
         exclusions=user_args.get("exclusions"),
+        facility_active_proportion=user_args["facility_active_proportion"],
     )

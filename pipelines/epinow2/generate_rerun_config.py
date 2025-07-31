@@ -33,4 +33,5 @@ if __name__ == "__main__":
         as_of_date=user_args["as_of_date"],
         output_container=user_args["output_container"],
         data_exclusions_path=data_exclusions_path,
+        facility_active_proportion=user_args["facility_active_proportion"],
     )

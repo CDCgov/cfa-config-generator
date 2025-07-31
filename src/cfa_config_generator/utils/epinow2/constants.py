@@ -13,6 +13,7 @@ shared_params = {
     "config_version": "1.0",
     "quantile_width": [0.5, 0.95],
     "model": "EpiNow2",
+    "facility_active_proportion": 1.0,
 }
 
 all_states = (
@@ -93,6 +94,7 @@ modifiable_params = (
     "exclusions",
     "quantile_width",
     "model",
+    "facility_active_proportion",
 )
 
 sample_task = {
@@ -139,4 +141,5 @@ sample_task = {
     "config_version": "1.0",
     "quantile_width": [0.5, 0.95],
     "model": "EpiNow2",
+    "facility_active_proportion": 1.0,
 }

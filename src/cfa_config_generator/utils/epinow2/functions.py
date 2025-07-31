@@ -24,6 +24,19 @@ def extract_user_args(as_of_date: str) -> dict[str, Any]:
     state = os.getenv("state") or "all"
     disease = os.getenv("disease") or "all"
 
+    # Handle facility_active_proportion
+    facility_active_proportion_str = os.getenv("facility_active_proportion")
+    try:
+        facility_active_proportion = (
+            float(facility_active_proportion_str)
+            if facility_active_proportion_str
+            else 1.0
+        )
+    except ValueError:
+        raise ValueError(
+            f"Invalid facility_active_proportion format: {facility_active_proportion_str}. Must be a float."
+        )
+
     # Handle report_date
     report_date_str = os.getenv("report_date")
     try:
@@ -81,6 +94,7 @@ def extract_user_args(as_of_date: str) -> dict[str, Any]:
         "job_id": job_id,
         "as_of_date": as_of_date,
         "output_container": output_container,
+        "facility_active_proportion": facility_active_proportion,
     }
 
 
@@ -187,6 +201,7 @@ def validate_args(
     job_id: str,
     as_of_date: str,
     output_container: str,
+    facility_active_proportion: float,
     task_exclusions: str | None = None,
     exclusions: dict | None = None,
 ) -> dict:
@@ -207,6 +222,8 @@ def validate_args(
         task_exclusions: comma separated state:disease pairs to exclude
         exclusions: A dictionary with `path` and `blob_storage_container` keys
         to specify the path to the exclusions file and its container.
+        facility_active_proportion: Minimum proportion of days a facility must be active
+            during the modeling period. Must be a number between 0 and 1.
     Returns:
         A dictionary of sanitized arguments.
     """
@@ -258,6 +275,16 @@ def validate_args(
             f"as_of_date must be a string. Got {type(as_of_date)} instead."
         )
 
+    # Check that the facility_active_proportion is a number between 0 and 1
+    if not isinstance(facility_active_proportion, (int, float)):
+        raise ValueError(
+            f"facility_active_proportion must be a number. Got {type(facility_active_proportion)} instead."
+        )
+    if facility_active_proportion < 0 or facility_active_proportion > 1:
+        raise ValueError(
+            f"facility_active_proportion must be between 0 and 1. Got {facility_active_proportion} instead."
+        )
+
     args_dict["reference_dates"] = reference_dates
     args_dict["report_date"] = report_date
     args_dict["data_path"] = data_path
@@ -267,6 +294,7 @@ def validate_args(
     args_dict["as_of_date"] = as_of_date
     args_dict["exclusions"] = exclusions
     args_dict["output_container"] = output_container
+    args_dict["facility_active_proportion"] = facility_active_proportion
     return args_dict
 
 
@@ -317,6 +345,7 @@ def generate_task_configs(
     production_date: date,
     job_id: str,
     output_container: str,
+    facility_active_proportion: float,
     task_exclusions: dict[str, list[str]] | None = None,
     exclusions: str | None = None,
 ) -> tuple[list[dict], str]:
@@ -336,6 +365,9 @@ def generate_task_configs(
         output_container: Azure container for output
         task_exclusions: dictionary of state:disease pairs to exclude
         exclusions: a path to exclusions csv
+        facility_active_proportion: Minimum proportion of days a facility must be active
+            during the modeling period. Must be a number between 0 and 1.
+
     Returns:
         A list of configuration objects and the job_id.
     """
@@ -347,6 +379,7 @@ def generate_task_configs(
                 **shared_params,
                 "job_id": job_id,
                 "task_id": generate_task_id(state=s, disease=d),
+                "facility_active_proportion": facility_active_proportion,
                 "exclusions": exclusions or {"path": None},
                 "min_reference_date": min(reference_dates).isoformat(),
                 "max_reference_date": max(reference_dates).isoformat(),

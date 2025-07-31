@@ -44,13 +44,19 @@ def test_exclusions():
         production_date=production_date,
         job_id="test-job-id",
         as_of_date=as_of_date,
-        task_exclusions="ID:COVID-19,WA:Influenza,OH:RSV",
         output_container="test-container",
+        facility_active_proportion=1.0,
+        task_exclusions="ID:COVID-19,WA:Influenza,OH:RSV",
         exclusions=None,
     )
     task_configs, _ = generate_task_configs(**validated_args)
     remaining_configs = 153
     assert len(task_configs) == remaining_configs
+
+    # Test that facility_active_proportion is present with default value
+    for config in task_configs:
+        assert "facility_active_proportion" in config
+        assert config["facility_active_proportion"] == 1.0
 
 
 def test_single_exclusion():
@@ -71,13 +77,19 @@ def test_single_exclusion():
         production_date=production_date,
         job_id="test-job-id",
         as_of_date=as_of_date,
-        task_exclusions="ID:COVID-19",
         output_container="test-container",
+        facility_active_proportion=1.0,
+        task_exclusions="ID:COVID-19",
         exclusions=None,
     )
     task_configs, _ = generate_task_configs(**validated_args)
     remaining_configs = 155
     assert len(task_configs) == remaining_configs
+
+    # Test that facility_active_proportion is present with default value
+    for config in task_configs:
+        assert "facility_active_proportion" in config
+        assert config["facility_active_proportion"] == 1.0
 
 
 def test_task_exclusion():
@@ -98,8 +110,9 @@ def test_task_exclusion():
         production_date=production_date,
         job_id="test-job-id",
         as_of_date=as_of_date,
-        task_exclusions="ID:COVID-19",
         output_container="test-container",
+        facility_active_proportion=1.0,
+        task_exclusions="ID:COVID-19",
         exclusions=None,
     )
     task_configs, _ = generate_task_configs(**validated_args)
@@ -129,17 +142,23 @@ def test_data_exclusion(good_config):
         production_date=production_date,
         job_id="test-job-id",
         as_of_date=as_of_date,
+        output_container="test-container",
+        facility_active_proportion=1.0,
         task_exclusions=task_excl_str,
         exclusions={
             "path": "tests/test_exclusions_passes.csv",
             "blob_storage_container": "test-container",
         },
-        output_container="test-container",
     )
 
     task_configs, _ = generate_task_configs(**sanitized_args)
     remaining_configs = 2
     assert len(task_configs) == remaining_configs
+
+    # Test that facility_active_proportion is present with default value
+    for config in task_configs:
+        assert "facility_active_proportion" in config
+        assert config["facility_active_proportion"] == 1.0
 
 
 @given(

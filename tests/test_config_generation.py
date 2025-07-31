@@ -34,6 +34,7 @@ def test_default_config_set():
         job_id="test-job-id",
         as_of_date=as_of_date,
         output_container="test-container",
+        facility_active_proportion=1.0,
         exclusions=None,
         task_exclusions=None,
     )
@@ -44,6 +45,11 @@ def test_default_config_set():
         all_diseases
     )
     assert len(task_configs) == total_tasks_expected
+
+    # Test that facility_active_proportion is present with default value
+    for config in task_configs:
+        assert "facility_active_proportion" in config
+        assert config["facility_active_proportion"] == 1.0
 
 
 def test_single_geo_disease_set():
@@ -64,6 +70,7 @@ def test_single_geo_disease_set():
         job_id="test-job-id",
         as_of_date=as_of_date,
         output_container="test-container",
+        facility_active_proportion=1.0,
         exclusions=None,
         task_exclusions=None,
     )
@@ -72,6 +79,11 @@ def test_single_geo_disease_set():
     task_configs, _ = generate_task_configs(**validated_args)
     total_tasks_expected = 1
     assert len(task_configs) == total_tasks_expected
+
+    # Test that facility_active_proportion is present with default value
+    config = task_configs[0]
+    assert "facility_active_proportion" in config
+    assert config["facility_active_proportion"] == 1.0
 
 
 @pytest.mark.parametrize(
@@ -133,3 +145,26 @@ def test_gen_ref_date_tuples(report_dates, time_span, expected_ref_dates):
     """
     got = generate_ref_date_tuples(report_dates=report_dates, delta=time_span)
     assert expected_ref_dates == got
+
+
+def test_facility_active_proportion_in_shared_params():
+    """Test that facility_active_proportion is included in shared_params with correct default value."""
+    from cfa_config_generator.utils.epinow2.constants import shared_params
+
+    assert "facility_active_proportion" in shared_params
+    assert shared_params["facility_active_proportion"] == 1.0
+
+
+def test_facility_active_proportion_modifiable():
+    """Test that facility_active_proportion is included in modifiable_params for CLI usage."""
+    from cfa_config_generator.utils.epinow2.constants import modifiable_params
+
+    assert "facility_active_proportion" in modifiable_params
+
+
+def test_sample_task_facility_active_proportion():
+    """Test that sample_task includes facility_active_proportion with correct default value."""
+    from cfa_config_generator.utils.epinow2.constants import sample_task
+
+    assert "facility_active_proportion" in sample_task
+    assert sample_task["facility_active_proportion"] == 1.0
