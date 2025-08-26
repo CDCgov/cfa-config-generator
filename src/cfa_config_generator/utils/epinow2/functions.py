@@ -9,6 +9,7 @@ import polars as pl
 
 from cfa_config_generator.utils.epinow2.constants import (
     all_diseases,
+    low_case_count_thresholds,
     nssp_valid_states,
     shared_params,
 )
@@ -384,6 +385,7 @@ def generate_task_configs(
                 "min_reference_date": min(reference_dates).isoformat(),
                 "max_reference_date": max(reference_dates).isoformat(),
                 "disease": d,
+                "low_case_count_thresholds": low_case_count_thresholds,
                 "geo_value": s,
                 "geo_type": "state" if s != "US" else "country",
                 "report_date": report_date.isoformat(),

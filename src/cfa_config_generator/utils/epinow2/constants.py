@@ -16,6 +16,8 @@ shared_params = {
     "facility_active_proportion": 1.0,
 }
 
+low_case_count_thresholds = {"COVID-19": 10, "Influenza": 10, "RSV": 5}
+
 all_states = (
     "AK",
     "AL",
