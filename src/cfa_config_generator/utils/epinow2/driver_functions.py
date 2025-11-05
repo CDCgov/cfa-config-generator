@@ -148,6 +148,7 @@ def generate_config(
     logger.info(
         f"Successfully generated configs for job; tasks stored in {generated_job_id} directory."
     )
+    return task_configs
 
 
 def generate_rerun_config(
