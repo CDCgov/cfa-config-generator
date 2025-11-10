@@ -4,7 +4,7 @@ import os
 from datetime import date
 
 import polars as pl
-from azure.identity import AzureCliCredential, DefaultAzureCredential
+from azure.identity import DefaultAzureCredential
 from azure.storage.blob import (
     BlobClient,
     BlobServiceClient,
@@ -211,9 +211,9 @@ def generate_config(
 
     # Push task configs to Azure Blob Storage
     try:
-        sp_credential: AzureCliCredential = obtain_sp_credential()
+        credential: DefaultAzureCredential = obtain_sp_credential()
         storage_client: BlobServiceClient = instantiate_blob_service_client(
-            sp_credential=sp_credential,
+            sp_credential=credential,
             account_url=azure_storage["azure_storage_account_url"],
         )
         container_client = storage_client.get_container_client(
