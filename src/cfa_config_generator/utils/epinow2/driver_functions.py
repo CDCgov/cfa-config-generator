@@ -242,29 +242,6 @@ def generate_config(
     return task_configs
 
 
-def create_task_files(task_configs: list[dict], generated_job_id: str):
-    """Creates a directory in 'dist' named after generated_job_id and generates JSON files."""
-    # Define the base directory
-    base_dir = os.path.join("dist", generated_job_id)
-
-    # Ensure the directory exists
-    os.makedirs(base_dir, exist_ok=True)
-
-    for task_config in task_configs:
-        # Get task_id and construct file path
-        task_id = task_config.get("task_id")
-        if task_id:  # Ensure task_id exists
-            file_path = os.path.join(base_dir, f"{task_id}.json")
-
-            # Write JSON file
-            with open(file_path, "w") as json_file:
-                json.dump(task_config, json_file, indent=4)
-
-    print(f"Generated {len(task_configs)} JSON files in directory:")
-    print(f"{base_dir}")
-    return base_dir
-
-
 def generate_rerun_config(
     state: str,
     disease: str,
