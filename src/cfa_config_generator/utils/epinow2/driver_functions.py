@@ -45,11 +45,11 @@ def generate_local_config(
     facility_active_proportion: float,
     task_exclusions: str | None = None,
     exclusions: dict | None = None,
-):
+) -> tuple[list[dict], str]:
     """
     A function to generate `epinow2` configuration objects based on provided arguments.
     This function validates the arguments, generates configuration objects,
-    and writes them to Blob Storage.
+    and returns them.
 
     Parameters
     ----------
@@ -85,8 +85,8 @@ def generate_local_config(
 
     Returns
     -------
-    None
-        The function writes the generated configuration objects to Blob Storage.
+     tuple[list[dict], str]
+        The function returns the generated configuration objects and the `job_id`.
 
     Raises
     ------
