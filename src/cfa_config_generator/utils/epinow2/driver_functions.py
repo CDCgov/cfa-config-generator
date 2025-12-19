@@ -1,6 +1,5 @@
 import json
 import logging
-import os
 from datetime import date
 
 import polars as pl
