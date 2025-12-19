@@ -3,7 +3,7 @@ import logging
 from datetime import date
 
 import polars as pl
-from azure.identity import AzureCliCredential, DefaultAzureCredential
+from azure.identity import DefaultAzureCredential
 from azure.storage.blob import (
     BlobClient,
     BlobServiceClient,
@@ -28,6 +28,96 @@ from cfa_config_generator.utils.epinow2.functions import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def generate_local_config(
+    state: str,
+    disease: str,
+    report_date: date,
+    reference_dates: tuple[date, date],
+    data_path: str,
+    data_container: str,
+    production_date: date,
+    job_id: str,
+    as_of_date: str,
+    output_container: str,
+    facility_active_proportion: float,
+    task_exclusions: str | None = None,
+    exclusions: dict | None = None,
+) -> tuple[list[dict], str]:
+    """
+    A function to generate `epinow2` configuration objects based on provided arguments.
+    This function validates the arguments, generates configuration objects,
+    and returns them.
+
+    Parameters
+    ----------
+    state: str
+        Geography to run model
+    disease: str
+        Disease to run
+    report_date: date
+        Date of snapshot to use for model run
+    reference_dates: tuple[date, date]
+        Length two tuple of the minimum and maximum reference (event) dates
+    data_path: str
+        Path to input data
+    data_container: str
+        Blob storage container for input data
+    production_date: date
+        Production date of model run
+    job_id: str
+        Unique identifier for job
+    as_of_date: str
+        ISO format timestamp specifying the timestamp as of which to fetch
+        the parameters for. This should usually be the same as the report date.
+    output_container: str
+        Blob storage container to store output
+    task_exclusions: str | None
+        Comma separated state:disease pair to exclude from model run
+    exclusions: dict | None
+        Dictionary with keys 'path' and 'blob_storage_container' for the exclusions file.
+        If provided, this will be used to generate the task exclusions string.
+    facility_active_proportion: float
+        Minimum proportion of days a facility must be active during the modeling period.
+        Must be a number between 0 and 1 (inclusive).
+
+    Returns
+    -------
+     tuple[list[dict], str]
+        The function returns the generated configuration objects and the `job_id`.
+
+    Raises
+    ------
+    ValueError
+        If the report_dates and reference_dates are not the same length.
+    LookupError
+        If there is an error obtaining the storage client.
+    ValueError
+        If there is an error pushing the configuration objects to Azure Blob Storage.
+    Exception
+        If there is an error during the process.
+    """
+    # Validate and sanitize args directly
+    sanitized_args = validate_args(
+        state=state,
+        disease=disease,
+        report_date=report_date,
+        reference_dates=reference_dates,
+        data_path=data_path,
+        data_container=data_container,
+        production_date=production_date,
+        job_id=job_id,
+        as_of_date=as_of_date,
+        output_container=output_container,
+        task_exclusions=task_exclusions,
+        exclusions=exclusions,
+        facility_active_proportion=facility_active_proportion,
+    )
+
+    # Generate task-specific configs
+    task_configs, generated_job_id = generate_task_configs(**sanitized_args)
+    return task_configs
 
 
 def generate_config(
@@ -120,9 +210,9 @@ def generate_config(
 
     # Push task configs to Azure Blob Storage
     try:
-        sp_credential: AzureCliCredential = obtain_sp_credential()
+        credential: DefaultAzureCredential = obtain_sp_credential()
         storage_client: BlobServiceClient = instantiate_blob_service_client(
-            sp_credential=sp_credential,
+            sp_credential=credential,
             account_url=azure_storage["azure_storage_account_url"],
         )
         container_client = storage_client.get_container_client(
@@ -148,6 +238,7 @@ def generate_config(
     logger.info(
         f"Successfully generated configs for job; tasks stored in {generated_job_id} directory."
     )
+    return task_configs
 
 
 def generate_rerun_config(
